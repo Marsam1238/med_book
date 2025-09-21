@@ -1,52 +1,43 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Calendar, BarChart2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AppointmentsTable } from "@/components/admin/AppointmentsTable";
+import { DoctorsTable } from "@/components/admin/DoctorsTable";
+import { LabTestsTable } from "@/components/admin/LabTestsTable";
+import { PrescriptionsTable } from "@/components/admin/PrescriptionsTable";
+import { Calendar, Stethoscope, Microscope, FileText } from "lucide-react";
 
 export default function AdminDashboard() {
     return (
         <div className="container py-12 md:py-16">
             <h1 className="text-3xl font-bold font-headline tracking-tight sm:text-4xl mb-8">Admin Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">1,250</div>
-                        <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Appointments</CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+235</div>
-                        <p className="text-xs text-muted-foreground">+18.1% from last month</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Lab Tests Booked</CardTitle>
-                        <BarChart2 className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+573</div>
-                        <p className="text-xs text-muted-foreground">+12% from last month</p>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="mt-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">No recent activity to show.</p>
-                    </CardContent>
-                </Card>
-            </div>
+
+            <Tabs defaultValue="appointments" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+                    <TabsTrigger value="appointments" className="flex-col sm:flex-row gap-2 py-2">
+                        <Calendar /> Appointments
+                    </TabsTrigger>
+                    <TabsTrigger value="doctors" className="flex-col sm:flex-row gap-2 py-2">
+                        <Stethoscope /> Doctors
+                    </TabsTrigger>
+                    <TabsTrigger value="lab_tests" className="flex-col sm:flex-row gap-2 py-2">
+                        <Microscope /> Lab Tests
+                    </TabsTrigger>
+                    <TabsTrigger value="prescriptions" className="flex-col sm:flex-row gap-2 py-2">
+                        <FileText /> Prescriptions
+                    </TabsTrigger>
+                </TabsList>
+                <TabsContent value="appointments">
+                    <AppointmentsTable />
+                </TabsContent>
+                <TabsContent value="doctors">
+                    <DoctorsTable />
+                </TabsContent>
+                <TabsContent value="lab_tests">
+                    <LabTestsTable />
+                </TabsContent>
+                <TabsContent value="prescriptions">
+                    <PrescriptionsTable />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }
