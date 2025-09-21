@@ -92,20 +92,20 @@ export function BookingModal({
 
   if (!user) {
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="font-headline">Login Required</DialogTitle>
-                    <DialogDescription>
-                        You need to be logged in to book an appointment.
-                    </DialogDescription>
-                </DialogHeader>
-                <Button onClick={() => router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}>
-                    <LogIn className="mr-2" />
-                    Go to Login
-                </Button>
-            </DialogContent>
-        </Dialog>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-headline">Login Required</DialogTitle>
+            <DialogDescription>
+              You need to be logged in to book an appointment.
+            </DialogDescription>
+          </DialogHeader>
+          <Button onClick={() => router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}>
+            <LogIn className="mr-2" />
+            Go to Login
+          </Button>
+        </DialogContent>
+      </Dialog>
     );
   }
 
