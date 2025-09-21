@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,13 +19,15 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("admin@healthconnect.com");
   const [password, setPassword] = useState("password");
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleLogin = () => {
     if (email === "admin@healthconnect.com" && password === "password") {
       toast({
         title: "Login Successful",
-        description: "Welcome back, Admin!",
+        description: "Redirecting to dashboard...",
       });
+      router.push('/admin/dashboard');
     } else {
       toast({
         variant: "destructive",
