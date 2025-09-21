@@ -114,7 +114,7 @@ export function BookingModal({
                 <DialogDescription>
                   Confirm your details and select a date and time.
                 </DialogDescription>
-              </Header>
+              </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="name" className="text-right">
