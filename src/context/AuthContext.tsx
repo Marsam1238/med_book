@@ -3,26 +3,11 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { 
-    onAuthStateChanged, 
-    User as FirebaseUser,
-    signInWithPhoneNumber,
-    RecaptchaVerifier,
-    ConfirmationResult
-} from 'firebase/auth';
-import toast from 'react-hot-toast';
-
-declare global {
-  interface Window {
-    recaptchaVerifier?: RecaptchaVerifier;
-    confirmationResult?: ConfirmationResult;
-  }
-}
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
   uid: string;
-  phoneNumber: string | null;
+  email: string | null;
   name?: string;
   address?: string;
 }
@@ -46,8 +31,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   appointments: Appointment[];
-  loginWithPhone: (phone: string) => Promise<void>;
-  verifyOtp: (otp: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, details: UserDetails) => Promise<void>;
   logout: () => void;
   addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => void;
   updateUserDetails: (details: UserDetails) => void;
@@ -55,33 +40,36 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user database for additional details
-const userDetailsStore: { [key: string]: UserDetails } = {};
+// Mock user database for storing registered users and their details
+const userStore: { [key: string]: User } = {
+    'user-123': {
+        uid: 'user-123',
+        email: 'user@healthconnect.com',
+        name: 'Demo User',
+        address: '123 Health St, Wellness City'
+    }
+};
+const passwordStore: { [key: string]: string } = {
+    'user-123': 'password'
+};
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        const userDetails = userDetailsStore[firebaseUser.uid] || {};
-        const currentUser: User = {
-          uid: firebaseUser.uid,
-          phoneNumber: firebaseUser.phoneNumber,
-          ...userDetails
-        };
-        setUser(currentUser);
-        loadAppointments(currentUser.uid);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    // Check if a user is saved in local storage to persist login
+    const savedUser = localStorage.getItem('healthConnectUser');
+    if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        loadAppointments(parsedUser.uid);
+    }
+    setLoading(false);
   }, []);
 
   const loadAppointments = (userId: string) => {
@@ -94,106 +82,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const saveAppointments = (userId: string, newAppointments: Appointment[]) => {
       localStorage.setItem(`healthConnectAppointments_${userId}`, JSON.stringify(newAppointments));
   }
-  
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
-      });
-    }
-    return window.recaptchaVerifier;
-  }
 
-  const loginWithPhone = async (phone: string) => {
-    const loadingToast = toast.loading('Sending OTP...');
-    try {
-        const appVerifier = setupRecaptcha();
-        const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
-        window.confirmationResult = confirmationResult;
-        toast.dismiss(loadingToast);
-        toast.success('OTP sent successfully!');
-    } catch(error: any) {
-        toast.dismiss(loadingToast);
-        console.error("OTP Error:", error);
-
-        if (error.code === 'auth/invalid-phone-number') {
-            toast.error('Invalid phone number provided. Please check the format.');
-        } else if (error.code === 'auth/too-many-requests') {
-            toast.error('Too many requests. Please try again later.');
-        } else if (error.code === 'auth/configuration-not-found' || error.code === 'auth/billing-not-enabled') {
-             toast.error('App configuration error. Please contact support.');
-        }
-        else {
-            toast.error('Failed to send OTP. Please try again.');
-        }
-        // Reset reCAPTCHA if it exists to allow retries
-        window.recaptchaVerifier?.clear();
-        throw error;
+  const login = async (email: string, password: string) => {
+    const userEntry = Object.values(userStore).find(u => u.email === email);
+    
+    if (userEntry && passwordStore[userEntry.uid] === password) {
+        setUser(userEntry);
+        localStorage.setItem('healthConnectUser', JSON.stringify(userEntry));
+        loadAppointments(userEntry.uid);
+        toast({ title: 'Login Successful' });
+        router.push('/profile');
+    } else {
+        throw new Error('Invalid email or password.');
     }
   }
 
-  const verifyOtp = async (otp: string) => {
-    const loadingToast = toast.loading('Verifying OTP...');
-    try {
-      if(window.confirmationResult) {
-        const result = await window.confirmationResult.confirm(otp);
-        const firebaseUser = result.user;
-        const userDetails = userDetailsStore[firebaseUser.uid] || {};
-        const currentUser: User = {
-          uid: firebaseUser.uid,
-          phoneNumber: firebaseUser.phoneNumber,
-          ...userDetails
-        };
-        setUser(currentUser);
-        toast.dismiss(loadingToast);
-        toast.success('Logged in successfully!');
-        
-        // Redirect logic after login
-        const hasCompletedProfile = userDetails.name && userDetails.address;
-        if(hasCompletedProfile) {
-          router.push('/profile');
-        } else {
-          router.push('/signup');
-        }
-      } else {
-         throw new Error("No confirmation result found. Please try sending the OTP again.");
+  const signup = async (email: string, password: string, details: UserDetails) => {
+      if (Object.values(userStore).some(u => u.email === email)) {
+          throw new Error('An account with this email already exists.');
       }
-    } catch(error: any) {
-        toast.dismiss(loadingToast);
-        console.error("OTP Verification Error:", error);
-        if(error.code === 'auth/invalid-verification-code'){
-            toast.error('Invalid OTP. Please try again.');
-        } else {
-            toast.error('Failed to verify OTP. Please try again.');
-        }
-        throw error;
-    }
+
+      const newUid = `user-${Date.now()}`;
+      const newUser: User = {
+          uid: newUid,
+          email,
+          ...details,
+      };
+
+      userStore[newUid] = newUser;
+      passwordStore[newUid] = password;
+
+      setUser(newUser);
+      localStorage.setItem('healthConnectUser', JSON.stringify(newUser));
+      toast({ title: 'Account created successfully!' });
+      router.push('/profile');
   }
 
   const updateUserDetails = (details: UserDetails) => {
       if(user) {
-          userDetailsStore[user.uid] = details;
           const updatedUser = { ...user, ...details };
+          userStore[user.uid] = updatedUser;
           setUser(updatedUser);
-          toast.success("Profile updated!");
+          localStorage.setItem('healthConnectUser', JSON.stringify(updatedUser));
+          toast({ title: 'Profile updated!'});
           router.push('/profile');
       }
   }
 
   const logout = async () => {
-    try {
-      await auth.signOut();
-      setUser(null);
-      setAppointments([]);
-      toast.success("You have been logged out successfully.");
-      router.push('/login');
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Logout Failed");
-    }
+    setUser(null);
+    setAppointments([]);
+    localStorage.removeItem('healthConnectUser');
+    toast({ title: "You have been logged out successfully." });
+    router.push('/login');
   };
 
   const addAppointment = (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => {
@@ -201,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newAppointment: Appointment = {
           ...appointmentData,
           id: appointments.length + 1,
-          user: user.name || user.phoneNumber || 'Unknown',
+          user: user.name || user.email || 'Unknown',
           status: 'Pending',
       }
       const newAppointments = [...appointments, newAppointment];
@@ -210,8 +151,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, appointments, loginWithPhone, verifyOtp, logout, addAppointment, updateUserDetails }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, loading, appointments, login, signup, logout, addAppointment, updateUserDetails }}>
+      {children}
     </AuthContext.Provider>
   );
 }

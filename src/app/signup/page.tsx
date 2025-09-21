@@ -17,46 +17,37 @@ import { Label } from '@/components/ui/label';
 import { UserPlus } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SignupPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const { user, updateUserDetails } = useAuth();
+  const { signup } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  if (!user) {
-     // Not logged in via OTP yet, show a message or redirect.
-      return (
-         <div className="flex items-center justify-center min-h-[calc(100vh-14rem)] py-12 bg-background">
-            <Card className="mx-auto max-w-sm w-full text-center">
-                 <CardHeader>
-                    <CardTitle className="text-2xl font-headline">Complete Your Profile</CardTitle>
-                    <CardDescription>
-                        Please log in with your phone number first to create an account.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild className="w-full">
-                        <Link href="/login">Go to Login</Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-      )
-  }
-
-  const handleProfileUpdate = () => {
-    if (!name || !address) {
-        alert("Please fill in all fields.");
+  const handleSignup = async () => {
+    if (!email || !password || !name || !address) {
+        toast({
+            variant: 'destructive',
+            title: 'Missing Fields',
+            description: 'Please fill in all fields.',
+        });
         return;
     }
     setLoading(true);
     try {
-        updateUserDetails({ name, address });
+        await signup(email, password, { name, address });
         // Redirect is handled in AuthContext
-    } catch (error) {
-        console.error(error);
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Signup Failed',
+            description: error.message,
+        });
     } finally {
         setLoading(false);
     }
@@ -67,10 +58,10 @@ export default function SignupPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-headline flex items-center gap-2">
-            <UserPlus className="h-6 w-6" /> Complete Your Account
+            <UserPlus className="h-6 w-6" /> Create an Account
           </CardTitle>
           <CardDescription>
-            You're almost there! Just add your details. Your phone number is {user.phoneNumber}.
+            Enter your details to create a new account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -85,6 +76,27 @@ export default function SignupPage() {
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+             <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
              <div className="grid gap-2">
               <Label htmlFor="address">Address</Label>
               <Textarea
@@ -95,9 +107,15 @@ export default function SignupPage() {
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
-            <Button onClick={handleProfileUpdate} disabled={loading} className="w-full">
-              {loading ? "Saving..." : "Save and Continue"}
+            <Button onClick={handleSignup} disabled={loading} className="w-full">
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
+            <div className="mt-4 text-center text-sm">
+              Already have an account?{' '}
+              <Link href="/login" className="underline">
+                Login
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>

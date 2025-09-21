@@ -14,43 +14,27 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { LogIn, MessageSquareQuote } from 'lucide-react';
+import { LogIn } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState('+91');
-  const [otp, setOtp] = useState('');
+  const [email, setEmail] = useState('user@healthconnect.com');
+  const [password, setPassword] = useState('password');
   const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const { loginWithPhone, verifyOtp } = useAuth();
+  const { login } = useAuth();
+  const { toast } = useToast();
 
-  const handleSendOtp = async () => {
-    if (phone.length < 10) {
-      // Basic validation
-      alert('Please enter a valid phone number.');
-      return;
-    }
+  const handleLogin = async () => {
     setLoading(true);
     try {
-      await loginWithPhone(phone);
-      setOtpSent(true);
-    } catch (error) {
-      // Error is handled in AuthContext via toast
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-     if (otp.length !== 6) {
-      alert('Please enter a valid 6-digit OTP.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await verifyOtp(otp);
+      await login(email, password);
       // On success, the AuthContext will redirect
-    } catch (error) {
-      // Error is handled in AuthContext via toast
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: error.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -61,51 +45,46 @@ export default function LoginPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-headline flex items-center gap-2">
-            <LogIn className="h-6 w-6" /> {otpSent ? 'Enter OTP' : 'Login with Phone'}
+            <LogIn className="h-6 w-6" /> Login
           </CardTitle>
           <CardDescription>
-            {otpSent ? 'An OTP has been sent to your phone.' : 'Enter your phone number to login or create an account.'}
+            Enter your email below to login to your account. <br/>
+            Use <strong>user@healthconnect.com</strong> and <strong>password</strong> for demo.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!otpSent ? (
-             <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+91 98765 43210"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
-              <Button onClick={handleSendOtp} disabled={loading} className="w-full">
-                {loading ? 'Sending OTP...' : 'Send OTP'}
-              </Button>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
-          ) : (
-             <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="otp">One-Time Password</Label>
-                <Input
-                  id="otp"
-                  type="text"
-                  placeholder="123456"
-                  required
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                />
-              </div>
-              <Button onClick={handleVerifyOtp} disabled={loading} className="w-full">
-                {loading ? 'Verifying...' : 'Verify OTP & Login'}
-              </Button>
-              <Button variant="link" onClick={() => setOtpSent(false)} disabled={loading}>
-                Back to phone number
-              </Button>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-          )}
+            <Button onClick={handleLogin} disabled={loading} className="w-full">
+              {loading ? 'Logging in...' : 'Login'}
+            </Button>
+            <div className="mt-4 text-center text-sm">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="underline">
+                Sign up
+              </Link>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

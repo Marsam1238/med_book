@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Loader2, LogIn, Phone } from 'lucide-react';
+import { Bell, Loader2, LogIn, Mail } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -128,12 +128,12 @@ export function BookingModal({
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="phone" className="text-right">
-                    Phone
+                  <Label htmlFor="email" className="text-right">
+                    Email
                   </Label>
                   <Input
-                    id="phone"
-                    value={user.phoneNumber || ''}
+                    id="email"
+                    value={user.email || ''}
                     className="col-span-3"
                     disabled
                   />
@@ -183,7 +183,7 @@ export function BookingModal({
                 </DialogFooter>
               )}
               <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
-                  <Bell className="h-4 w-4" /> You'll receive an SMS reminder 24 hours before your appointment.
+                  <Bell className="h-4 w-4" /> You'll receive an email reminder 24 hours before your appointment.
               </p>
             </>
           )}
