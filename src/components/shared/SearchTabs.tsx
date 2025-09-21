@@ -56,7 +56,7 @@ function Combobox({
           className="w-full justify-between text-muted-foreground"
         >
           {value
-            ? items.find((item) => item.toLowerCase() === value)
+            ? items.find((item) => item.toLowerCase() === value.toLowerCase())
             : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -74,14 +74,14 @@ function Combobox({
                     key={item}
                     value={item}
                     onSelect={(currentValue) => {
-                      onChange(currentValue === value ? '' : currentValue);
+                      onChange(currentValue.toLowerCase() === value.toLowerCase() ? '' : currentValue);
                       setOpen(false);
                     }}
                   >
                     <Check
                       className={cn(
                         'mr-2 h-4 w-4',
-                        value === item.toLowerCase()
+                        value.toLowerCase() === item.toLowerCase()
                           ? 'opacity-100'
                           : 'opacity-0'
                       )}
