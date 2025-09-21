@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Video } from 'lucide-react';
+import { Bell, Loader2 } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -134,12 +134,16 @@ export function BookingModal({
             </div>
           </div>
         </div>
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-           <Button variant="outline" disabled>
-             <Video className="mr-2 h-4 w-4" /> Start Telehealth Call
-           </Button>
-          <Button onClick={handleBooking} disabled={isConfirming}>
-            {isConfirming ? 'Confirming...' : 'Confirm Booking'}
+        <DialogFooter>
+          <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
+            {isConfirming ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Confirming...
+              </>
+            ) : (
+              'Confirm Booking'
+            )}
           </Button>
         </DialogFooter>
          <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
