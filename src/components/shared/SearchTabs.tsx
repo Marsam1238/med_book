@@ -1,7 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, FileUp, Pill, Microscope, Search, Check, ChevronsUpDown } from 'lucide-react';
+import {
+  CheckCircle,
+  FileUp,
+  Pill,
+  Microscope,
+  Search,
+  Check,
+  ChevronsUpDown,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -23,16 +31,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { doctorSpecializations, labTestCategories } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 function Combobox({
   items,
   placeholder,
+  value,
+  onChange,
 }: {
   items: string[];
   placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -55,24 +67,28 @@ function Combobox({
           <CommandList>
             <CommandEmpty>No item found.</CommandEmpty>
             <CommandGroup>
-              {items.filter(item => item !== "All").map((item) => (
-                <CommandItem
-                  key={item}
-                  value={item}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? '' : currentValue);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value === item.toLowerCase() ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                  {item}
-                </CommandItem>
-              ))}
+              {items
+                .filter((item) => item !== 'All')
+                .map((item) => (
+                  <CommandItem
+                    key={item}
+                    value={item}
+                    onSelect={(currentValue) => {
+                      onChange(currentValue === value ? '' : currentValue);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === item.toLowerCase()
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                      )}
+                    />
+                    {item}
+                  </CommandItem>
+                ))}
             </CommandGroup>
           </CommandList>
         </Command>
@@ -155,6 +171,26 @@ function PrescriptionUpload() {
 }
 
 export function SearchTabs() {
+  const router = useRouter();
+  const [doctorFilter, setDoctorFilter] = useState('');
+  const [labFilter, setLabFilter] = useState('');
+
+  const handleDoctorSearch = () => {
+    const params = new URLSearchParams();
+    if (doctorFilter) {
+      params.set('specialization', doctorFilter);
+    }
+    router.push(`/?${params.toString()}#doctors`);
+  };
+
+  const handleLabSearch = () => {
+    const params = new URLSearchParams();
+    if (labFilter) {
+      params.set('category', labFilter);
+    }
+    router.push(`/?${params.toString()}#lab-tests`);
+  };
+
   return (
     <Tabs defaultValue="doctor" className="w-full">
       <TabsList className="grid w-full grid-cols-3">
@@ -167,8 +203,10 @@ export function SearchTabs() {
           <Combobox
             items={doctorSpecializations}
             placeholder="Select a Specialization"
+            value={doctorFilter}
+            onChange={setDoctorFilter}
           />
-          <Button className="w-full">
+          <Button className="w-full" onClick={handleDoctorSearch}>
             <Search className="mr-2 h-4 w-4" /> Search Doctors
           </Button>
         </div>
@@ -178,8 +216,10 @@ export function SearchTabs() {
           <Combobox
             items={labTestCategories}
             placeholder="Select a Test Category"
+            value={labFilter}
+            onChange={setLabFilter}
           />
-          <Button className="w-full">
+          <Button className="w-full" onClick={handleLabSearch}>
             <Search className="mr-2 h-4 w-4" /> Search Lab Tests
           </Button>
         </div>

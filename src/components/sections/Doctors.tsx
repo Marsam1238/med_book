@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DoctorCard } from '@/components/shared/DoctorCard';
 import { doctors, doctorSpecializations } from '@/lib/data';
 import type { Doctor } from '@/lib/data';
@@ -9,9 +10,22 @@ import { cn } from '@/lib/utils';
 import { BookingModal } from '../shared/BookingModal';
 
 export default function Doctors() {
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+
+  useEffect(() => {
+    const specialization = searchParams.get('specialization');
+    if (specialization && doctorSpecializations.map(s => s.toLowerCase()).includes(specialization.toLowerCase())) {
+      const matchingSpecialization = doctorSpecializations.find(s => s.toLowerCase() === specialization.toLowerCase());
+      if(matchingSpecialization) {
+        setFilter(matchingSpecialization);
+      }
+    } else {
+        setFilter('All');
+    }
+  }, [searchParams]);
 
   const filteredDoctors =
     filter === 'All'

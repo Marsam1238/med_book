@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LabTestCard } from '@/components/shared/LabTestCard';
 import { labTests, labTestCategories } from '@/lib/data';
 import type { LabTest } from '@/lib/data';
@@ -9,9 +10,22 @@ import { cn } from '@/lib/utils';
 import { BookingModal } from '../shared/BookingModal';
 
 export default function LabTests() {
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTest, setSelectedTest] = useState<LabTest | null>(null);
+
+   useEffect(() => {
+    const category = searchParams.get('category');
+    if (category && labTestCategories.map(c => c.toLowerCase()).includes(category.toLowerCase())) {
+       const matchingCategory = labTestCategories.find(c => c.toLowerCase() === category.toLowerCase());
+      if(matchingCategory) {
+        setFilter(matchingCategory);
+      }
+    } else {
+        setFilter('All');
+    }
+  }, [searchParams]);
 
   const filteredTests =
     filter === 'All'
