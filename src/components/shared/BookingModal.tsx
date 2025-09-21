@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -56,9 +56,18 @@ export function BookingModal({
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>('');
-  const [name, setName] = useState(user?.name || '');
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+    } else {
+      setName('');
+    }
+  }, [user, isOpen]);
+
 
   const handleBooking = () => {
     if (!date || !time || !name || !phone) {
@@ -91,7 +100,7 @@ export function BookingModal({
                         You need to be logged in to book an appointment.
                     </DialogDescription>
                 </DialogHeader>
-                <Button onClick={() => router.push('/login')}>
+                <Button onClick={() => router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}>
                     <LogIn className="mr-2" />
                     Go to Login
                 </Button>
@@ -148,7 +157,7 @@ export function BookingModal({
               <Select onValueChange={setTime} value={time}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a time" />
-                </SelectTrigger>
+                </Trigger>
                 <SelectContent>
                   {timeSlots.map((slot) => (
                     <SelectItem key={slot} value={slot}>

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +24,8 @@ export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -40,7 +42,11 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: 'Welcome back!',
       });
-      router.push('/profile');
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push('/profile');
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
