@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.success('OTP sent successfully!');
     } catch(error) {
         console.error("Error sending OTP:", error);
-        toast.error('Failed to send OTP. Please make sure to use a valid phone number with country code and enable Phone authentication in your Firebase console.');
+        toast.error('Failed to send OTP. Please enter a valid phone number including the country code.');
         // Reset reCAPTCHA so user can try again.
         if (window.recaptchaVerifier) {
             window.recaptchaVerifier.render().then((widgetId) => {
