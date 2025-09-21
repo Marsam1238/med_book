@@ -90,9 +90,9 @@ export function BookingModal({
     }, 1500);
   };
 
-  if (!user) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      {!user ? (
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-headline">Login Required</DialogTitle>
@@ -105,86 +105,82 @@ export function BookingModal({
             Go to Login
           </Button>
         </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="font-headline">{title}</DialogTitle>
-          <DialogDescription>
-            Please provide your details and select a date and time.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="col-span-3"
-              placeholder="John Doe"
-              disabled
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="phone" className="text-right">
-              Phone
-            </Label>
-            <Input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="col-span-3"
-              placeholder="(123) 456-7890"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-              disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-            />
-            <div className="flex-grow space-y-2">
-              <Label>Time</Label>
-              <Select onValueChange={setTime} value={time}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a time" />
-                </Trigger>
-                <SelectContent>
-                  {timeSlots.map((slot) => (
-                    <SelectItem key={slot} value={slot}>
-                      {slot}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      ) : (
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="font-headline">{title}</DialogTitle>
+            <DialogDescription>
+              Please provide your details and select a date and time.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="col-span-3"
+                placeholder="John Doe"
+                disabled
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="col-span-3"
+                placeholder="(123) 456-7890"
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                className="rounded-md border"
+                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+              />
+              <div className="flex-grow space-y-2">
+                <Label>Time</Label>
+                <Select onValueChange={setTime} value={time}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((slot) => (
+                      <SelectItem key={slot} value={slot}>
+                        {slot}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
-            {isConfirming ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Confirming...
-              </>
-            ) : (
-              'Confirm Booking'
-            )}
-          </Button>
-        </DialogFooter>
-         <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
-            <Bell className="h-4 w-4" /> You'll receive an email reminder 24 hours before your appointment.
-        </p>
-      </DialogContent>
+          <DialogFooter>
+            <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
+              {isConfirming ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Confirming...
+                </>
+              ) : (
+                'Confirm Booking'
+              )}
+            </Button>
+          </DialogFooter>
+           <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
+              <Bell className="h-4 w-4" /> You'll receive an email reminder 24 hours before your appointment.
+          </p>
+        </DialogContent>
+      )}
     </Dialog>
   );
 }
