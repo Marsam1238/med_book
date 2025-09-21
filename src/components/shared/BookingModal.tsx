@@ -51,7 +51,7 @@ export function BookingModal({
   itemName,
 }: BookingModalProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, addAppointment } = useAuth();
   const router = useRouter();
 
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -81,6 +81,14 @@ export function BookingModal({
 
     setIsConfirming(true);
     setTimeout(() => {
+
+      addAppointment({
+        item: itemName,
+        type: itemType,
+        date: date.toLocaleDateString(),
+        time: time,
+      });
+
       setIsConfirming(false);
       onClose();
       toast({
@@ -90,9 +98,9 @@ export function BookingModal({
     }, 1500);
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      {!user ? (
+  if (!user) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-headline">Login Required</DialogTitle>
@@ -105,7 +113,12 @@ export function BookingModal({
             Go to Login
           </Button>
         </DialogContent>
-      ) : (
+      </Dialog>
+    )
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="font-headline">{title}</DialogTitle>
@@ -180,7 +193,6 @@ export function BookingModal({
               <Bell className="h-4 w-4" /> You'll receive an email reminder 24 hours before your appointment.
           </p>
         </DialogContent>
-      )}
     </Dialog>
   );
 }

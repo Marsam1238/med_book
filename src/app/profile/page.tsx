@@ -12,10 +12,12 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Mail, Home } from 'lucide-react';
+import { User, Mail, Home, Calendar, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, appointments } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container py-12 md:py-16">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-4xl">
         <Card>
           <CardHeader className="text-center">
              <Avatar className="mx-auto h-24 w-24 mb-4 text-3xl">
@@ -64,7 +66,34 @@ export default function ProfilePage() {
                     <CardTitle className="text-xl font-headline">My Appointments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">You have no upcoming appointments.</p>
+                    {appointments.length > 0 ? (
+                       <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Item</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Date & Time</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {appointments.map(apt => (
+                              <TableRow key={apt.id}>
+                                <TableCell>{apt.item}</TableCell>
+                                <TableCell>{apt.type}</TableCell>
+                                <TableCell>{apt.date} at {apt.time}</TableCell>
+                                <TableCell>
+                                  <Badge variant={apt.status === 'Confirmed' ? 'default' : 'secondary'} className={apt.status === 'Confirmed' ? 'bg-green-600' : ''}>
+                                    {apt.status}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-muted-foreground">You have no upcoming appointments.</p>
+                    )}
                 </CardContent>
             </Card>
 
