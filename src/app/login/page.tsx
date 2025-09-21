@@ -19,7 +19,7 @@ import { LogIn, Phone } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('+91');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -73,7 +73,7 @@ export default function LoginPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="+1 123 456 7890"
+                  placeholder="+91 98765 43210"
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
