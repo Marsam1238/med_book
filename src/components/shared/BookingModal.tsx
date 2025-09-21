@@ -56,25 +56,14 @@ export function BookingModal({
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setName(user.name);
-    } else {
-      setName('');
-    }
-  }, [user, isOpen]);
-
-
   const handleBooking = () => {
-    if (!date || !time || !name || !phone) {
+    if (!date || !time) {
       toast({
         variant: 'destructive',
         title: 'Missing Information',
-        description: 'Please fill out all fields to book an appointment.',
+        description: 'Please select a date and time to book an appointment.',
       });
       return;
     }
@@ -98,100 +87,99 @@ export function BookingModal({
     }, 1500);
   };
 
-  if (!user) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-headline">Login Required</DialogTitle>
-            <DialogDescription>
-              You need to be logged in to book an appointment.
-            </DialogDescription>
-          </DialogHeader>
-          <Button onClick={() => router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}>
-            <LogIn className="mr-2" />
-            Go to Login
-          </Button>
-        </DialogContent>
-      </Dialog>
-    )
+  if (!isOpen) {
+    return null;
   }
-
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="font-headline">{title}</DialogTitle>
-            <DialogDescription>
-              Please provide your details and select a date and time.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
-                placeholder="John Doe"
-                disabled
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="col-span-3"
-                placeholder="(123) 456-7890"
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md border"
-                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-              />
-              <div className="flex-grow space-y-2">
-                <Label>Time</Label>
-                <Select onValueChange={setTime} value={time}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((slot) => (
-                      <SelectItem key={slot} value={slot}>
-                        {slot}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+         {!user ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-headline">Login Required</DialogTitle>
+                <DialogDescription>
+                  You need to be logged in to book an appointment.
+                </DialogDescription>
+              </DialogHeader>
+              <Button onClick={() => router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}>
+                <LogIn className="mr-2" />
+                Go to Login
+              </Button>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-headline">{title}</DialogTitle>
+                <DialogDescription>
+                  Confirm your details and select a date and time.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={user.name || 'Anonymous'}
+                    className="col-span-3"
+                    disabled
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="phone" className="text-right">
+                    Phone
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={user.phoneNumber || ''}
+                    className="col-span-3"
+                    disabled
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    className="rounded-md border"
+                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                  />
+                  <div className="flex-grow space-y-2">
+                    <Label>Time</Label>
+                    <Select onValueChange={setTime} value={time}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeSlots.map((slot) => (
+                          <SelectItem key={slot} value={slot}>
+                            {slot}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
-              {isConfirming ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Confirming...
-                </>
-              ) : (
-                'Confirm Booking'
-              )}
-            </Button>
-          </DialogFooter>
-           <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
-              <Bell className="h-4 w-4" /> You'll receive an email reminder 24 hours before your appointment.
-          </p>
+              <DialogFooter>
+                <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
+                  {isConfirming ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Confirming...
+                    </>
+                  ) : (
+                    'Confirm Booking'
+                  )}
+                </Button>
+              </DialogFooter>
+              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
+                  <Bell className="h-4 w-4" /> You'll receive an SMS reminder 24 hours before your appointment.
+              </p>
+            </>
+          )}
         </DialogContent>
     </Dialog>
   );

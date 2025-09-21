@@ -14,45 +14,43 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { LogIn } from 'lucide-react';
+import { LogIn, Phone } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useAuth();
-  const { toast } = useToast();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (!email || !password) {
-        toast({
-            variant: "destructive",
-            title: "Login Failed",
-            description: "Please enter both email and password.",
-        });
+  const { loginWithPhone, verifyOtp } = useAuth();
+  const router = useRouter();
+
+  const handleSendOtp = async () => {
+    if (phone.length < 10) {
+      toast.error('Please enter a valid phone number.');
+      return;
+    }
+    setLoading(true);
+    await loginWithPhone(phone);
+    setLoading(false);
+    setOtpSent(true);
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+        toast.error('Please enter a valid 6-digit OTP.');
         return;
     }
+    setLoading(true);
     try {
-      login(email, password);
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
-      });
-      if (redirectUrl) {
-        router.push(redirectUrl);
-      } else {
-        router.push('/profile');
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: error.message,
-      });
+        await verifyOtp(otp);
+        // On success, the AuthContext will redirect
+    } catch (error) {
+        // Error is handled in AuthContext
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -64,44 +62,51 @@ export default function LoginPage() {
             <LogIn className="h-6 w-6" /> Login
           </CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your phone number to receive an OTP.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="user@test.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+          {!otpSent ? (
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+1 123 456 7890"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <Button onClick={handleSendOtp} disabled={loading} className="w-full">
+                {loading ? 'Sending...' : 'Send OTP'}
+              </Button>
             </div>
-            <Button onClick={handleLogin} className="w-full">
-              Login
-            </Button>
-          </div>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="underline">
-              Sign up
-            </Link>
+          ) : (
+             <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="otp">Enter OTP</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    maxLength={6}
+                    placeholder="123456"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                  />
+                </div>
+                <Button onClick={handleVerifyOtp} disabled={loading} className="w-full">
+                   {loading ? 'Verifying...' : 'Verify OTP & Login'}
+                </Button>
+                 <Button variant="link" size="sm" onClick={() => setOtpSent(false)} className="text-sm">
+                    Back to phone number
+                </Button>
+             </div>
+          )}
+           <div className="mt-4 text-center text-sm">
+            This site uses reCAPTCHA for security.
           </div>
         </CardContent>
       </Card>

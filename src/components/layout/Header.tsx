@@ -77,9 +77,7 @@ export function Header() {
                 <Button asChild variant="ghost">
                   <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
                 </Button>
-                <Button asChild>
-                  <Link href="/signup"><UserPlus className="mr-2 h-4 w-4" />Sign Up</Link>
-                </Button>
+                
               </>
             )}
              <Button asChild variant="secondary">
@@ -121,9 +119,6 @@ export function Header() {
                         <>
                           <Button asChild variant="ghost" className="w-full justify-start">
                             <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
-                          </Button>
-                          <Button asChild className="w-full justify-start">
-                            <Link href="/signup"><UserPlus className="mr-2 h-4 w-4" />Sign Up</Link>
                           </Button>
                         </>
                       )}

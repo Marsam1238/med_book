@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,59 +14,58 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 import { UserPlus } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [address, setAddress] = useState('');
-  const { signup } = useAuth();
-  const { toast } = useToast();
+  const { user, updateUserProfile, loading } = useAuth();
   const router = useRouter();
 
-  const handleSignup = () => {
-    if(!name || !email || !password || !address) {
-        toast({
-            variant: "destructive",
-            title: "Missing Fields",
-            description: "Please fill in all fields.",
-        });
+  useEffect(() => {
+    // If not logged in or already has a name, redirect
+    if (!loading && (!user || user.name)) {
+      router.push('/profile');
+    }
+  }, [user, loading, router]);
+
+
+  const handleProfileUpdate = () => {
+    if(!name || !address) {
+        toast.error("Please fill in all fields.");
         return;
     }
-
-    try {
-      signup({ name, email, password, address });
-      toast({
-        title: 'Signup Successful',
-        description: 'Your account has been created.',
-      });
-      router.push('/profile');
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Signup Failed',
-        description: error.message,
-      });
-    }
+    updateUserProfile({ name, address });
   };
+  
+  if (loading || !user) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-14rem)] py-12 bg-background">
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-headline flex items-center gap-2">
-            <UserPlus className="h-6 w-6" /> Sign Up
+            <UserPlus className="h-6 w-6" /> Complete Your Profile
           </CardTitle>
           <CardDescription>
-            Create an account to get started.
+            Just a few more details to get you started.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
+             <div className="grid gap-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={user.phoneNumber || ''}
+                disabled
+              />
+            </div>
              <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -75,27 +74,6 @@ export default function SignupPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
              <div className="grid gap-2">
@@ -108,15 +86,9 @@ export default function SignupPage() {
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
-            <Button onClick={handleSignup} className="w-full">
-              Create an account
+            <Button onClick={handleProfileUpdate} className="w-full">
+              Save Profile
             </Button>
-          </div>
-          <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
-            <Link href="/login" className="underline">
-              Login
-            </Link>
           </div>
         </CardContent>
       </Card>
