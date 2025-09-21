@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { usePathname } from 'next/navigation';
@@ -96,6 +99,12 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right">
+                <SheetHeader className="text-left">
+                  <SheetTitle className="font-headline">Menu</SheetTitle>
+                  <SheetDescription>
+                    Navigate through the HealthConnect app.
+                  </SheetDescription>
+                </SheetHeader>
                 <div className="flex flex-col space-y-4 pt-6">
                   <NavLinks className="flex-col space-x-0 space-y-4 items-start" />
                   <div className="border-t pt-4 space-y-2">
