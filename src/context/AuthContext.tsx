@@ -4,18 +4,17 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import toast from 'react-hot-toast';
+import { 
+    onAuthStateChanged, 
+    User as FirebaseUser,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword
+} from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
-declare global {
-    interface Window {
-        recaptchaVerifier?: RecaptchaVerifier;
-        confirmationResult?: any;
-    }
-}
 interface User {
   uid: string;
-  phoneNumber: string | null;
+  email: string | null;
   name?: string;
   address?: string;
 }
@@ -30,29 +29,32 @@ export interface Appointment {
   status: 'Pending' | 'Confirmed';
 }
 
+interface UserDetails {
+    name: string;
+    address: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   appointments: Appointment[];
-  loginWithPhone: (phone: string) => Promise<void>;
-  verifyOtp: (otp: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<void>;
+  signup: (email: string, pass: string, details: UserDetails) => Promise<void>;
   logout: () => void;
   addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => void;
-  updateUserProfile: (details: {name: string, address: string}) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user database for additional details
-const userDetailsStore: { [key: string]: { name: string; address: string } } = {
-    // Example: '+11234567890': { name: 'Test User', address: '123 Test St' }
-};
+const userDetailsStore: { [key: string]: UserDetails } = {};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -60,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDetails = userDetailsStore[firebaseUser.uid] || {};
         const currentUser: User = {
           uid: firebaseUser.uid,
-          phoneNumber: firebaseUser.phoneNumber,
+          email: firebaseUser.email,
           ...userDetails
         };
         setUser(currentUser);
@@ -84,69 +86,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const saveAppointments = (userId: string, newAppointments: Appointment[]) => {
       localStorage.setItem(`healthConnectAppointments_${userId}`, JSON.stringify(newAppointments));
   }
-
-  const setupRecaptcha = (phone: string) => {
-    // Note: The 'recaptcha-container' must be visible.
-    // We are using an invisible reCAPTCHA, but the container must exist.
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response: any) => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-          // This callback is for v2 invisible reCAPTCHA, might not be
-          // necessary for v3 but good to have.
-        }
-      });
+  
+  const handleAuthSuccess = (firebaseUser: FirebaseUser, details?: UserDetails) => {
+    const userDetails = details || userDetailsStore[firebaseUser.uid] || {};
+     if(details) {
+        userDetailsStore[firebaseUser.uid] = details; // Save details
+    }
+    const currentUser: User = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        ...userDetails
+    };
+    setUser(currentUser);
+    toast({ title: "Success", description: "Logged in successfully." });
+    router.push('/profile');
   }
 
-  const loginWithPhone = async (phone: string) => {
+  const handleAuthError = (error: any) => {
+    console.error("Authentication error:", error);
+    toast({
+        variant: "destructive",
+        title: "Authentication Failed",
+        description: error.message || "An unexpected error occurred.",
+    });
+    throw error;
+  }
+
+  const login = async (email: string, pass: string) => {
     try {
-        setupRecaptcha(phone);
-        const appVerifier = window.recaptchaVerifier!;
-        const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
-        window.confirmationResult = confirmationResult;
-        toast.success('OTP sent successfully!');
-    } catch(error) {
-        console.error("Error sending OTP:", error);
-        toast.error('Failed to send OTP. Please ensure you have entered a valid phone number including the country code and that the reCAPTCHA is working.');
-        
-        // Reset reCAPTCHA so user can try again.
-        if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.render().then((widgetId) => {
-                // @ts-ignore
-                if(window.grecaptcha) {
-                    // @ts-ignore
-                    window.grecaptcha.reset(widgetId);
-                }
-            });
-        }
+        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+        handleAuthSuccess(userCredential.user);
+    } catch (error) {
+        handleAuthError(error);
     }
-  };
+  }
 
-  const verifyOtp = async (otp: string) => {
+  const signup = async (email: string, pass: string, details: UserDetails) => {
     try {
-        if(window.confirmationResult) {
-            const result = await window.confirmationResult.confirm(otp);
-            const firebaseUser = result.user;
-            const userDetails = userDetailsStore[firebaseUser.uid] || {};
-
-            const currentUser: User = {
-                uid: firebaseUser.uid,
-                phoneNumber: firebaseUser.phoneNumber,
-                ...userDetails
-            };
-            setUser(currentUser);
-            
-            if(!currentUser.name) {
-                toast.success('Login successful! Please complete your profile.');
-                router.push('/signup');
-            } else {
-                toast.success('Login successful!');
-                router.push('/profile');
-            }
-        }
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+        handleAuthSuccess(userCredential.user, details);
     } catch(error) {
-        console.error("Error verifying OTP:", error);
-        toast.error('Invalid OTP. Please try again.');
+        handleAuthError(error);
     }
   }
 
@@ -155,30 +135,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await auth.signOut();
       setUser(null);
       setAppointments([]);
-      toast.success('Logged out successfully.');
+      toast({ title: "Logged Out", description: "You have been logged out successfully."});
       router.push('/login');
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error('Failed to log out.');
+      toast({ variant: "destructive", title: "Logout Failed" });
     }
   };
-
-  const updateUserProfile = (details: {name: string, address: string}) => {
-    if (user) {
-        const updatedUser = {...user, ...details};
-        setUser(updatedUser);
-        userDetailsStore[user.uid] = details; // Store details
-        toast.success('Profile updated successfully!');
-        router.push('/profile');
-    }
-  }
 
   const addAppointment = (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => {
       if(!user) return;
       const newAppointment: Appointment = {
           ...appointmentData,
           id: appointments.length + 1,
-          user: user.name || user.phoneNumber || 'Unknown',
+          user: user.name || user.email || 'Unknown',
           status: 'Pending',
       }
       const newAppointments = [...appointments, newAppointment];
@@ -187,9 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, appointments, loginWithPhone, verifyOtp, logout, addAppointment, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, loading, appointments, login, signup, logout, addAppointment }}>
       {!loading && children}
-      <div id="recaptcha-container"></div>
     </AuthContext.Provider>
   );
 }

@@ -5,7 +5,6 @@ import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AuthProvider } from '@/context/AuthContext';
-import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'HealthConnect - Your Health Partner',
@@ -41,7 +40,6 @@ export default function RootLayout({
         )}
       >
         <AuthProvider>
-          <Toaster />
           <div className="relative flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
