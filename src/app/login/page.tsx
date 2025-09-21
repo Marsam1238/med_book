@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,32 +14,43 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { LogIn } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { LogIn, MessageSquareQuote } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('+91');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const router = useRouter();
-  const { toast } = useToast();
+  const [otpSent, setOtpSent] = useState(false);
+  const { loginWithPhone, verifyOtp } = useAuth();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      toast({
-        variant: "destructive",
-        title: 'Missing Fields',
-        description: 'Please enter both email and password.',
-      });
+  const handleSendOtp = async () => {
+    if (phone.length < 10) {
+      // Basic validation
+      alert('Please enter a valid phone number.');
       return;
     }
     setLoading(true);
     try {
-      await login(email, password);
+      await loginWithPhone(phone);
+      setOtpSent(true);
+    } catch (error) {
+      // Error is handled in AuthContext via toast
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+     if (otp.length !== 6) {
+      alert('Please enter a valid 6-digit OTP.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await verifyOtp(otp);
       // On success, the AuthContext will redirect
     } catch (error) {
-      // Error is handled in AuthContext
+      // Error is handled in AuthContext via toast
     } finally {
       setLoading(false);
     }
@@ -51,47 +61,51 @@ export default function LoginPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-headline flex items-center gap-2">
-            <LogIn className="h-6 w-6" /> Login
+            <LogIn className="h-6 w-6" /> {otpSent ? 'Enter OTP' : 'Login with Phone'}
           </CardTitle>
           <CardDescription>
-            Enter your email below to login to your account.
+            {otpSent ? 'An OTP has been sent to your phone.' : 'Enter your phone number to login or create an account.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+          {!otpSent ? (
+             <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <Button onClick={handleSendOtp} disabled={loading} className="w-full">
+                {loading ? 'Sending OTP...' : 'Send OTP'}
+              </Button>
             </div>
-            <Button onClick={handleLogin} disabled={loading} className="w-full">
-              {loading ? 'Logging in...' : 'Login'}
-            </Button>
-          </div>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="underline">
-              Sign up
-            </Link>
-          </div>
+          ) : (
+             <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="otp">One-Time Password</Label>
+                <Input
+                  id="otp"
+                  type="text"
+                  placeholder="123456"
+                  required
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleVerifyOtp} disabled={loading} className="w-full">
+                {loading ? 'Verifying...' : 'Verify OTP & Login'}
+              </Button>
+              <Button variant="link" onClick={() => setOtpSent(false)} disabled={loading}>
+                Back to phone number
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

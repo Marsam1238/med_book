@@ -7,14 +7,22 @@ import { auth } from '@/lib/firebase';
 import { 
     onAuthStateChanged, 
     User as FirebaseUser,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword
+    signInWithPhoneNumber,
+    RecaptchaVerifier,
+    ConfirmationResult
 } from 'firebase/auth';
-import { useToast } from '@/hooks/use-toast';
+import toast from 'react-hot-toast';
+
+declare global {
+  interface Window {
+    recaptchaVerifier?: RecaptchaVerifier;
+    confirmationResult?: ConfirmationResult;
+  }
+}
 
 interface User {
   uid: string;
-  email: string | null;
+  phoneNumber: string | null;
   name?: string;
   address?: string;
 }
@@ -38,10 +46,11 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   appointments: Appointment[];
-  login: (email: string, pass: string) => Promise<void>;
-  signup: (email: string, pass: string, details: UserDetails) => Promise<void>;
+  loginWithPhone: (phone: string) => Promise<void>;
+  verifyOtp: (otp: string) => Promise<void>;
   logout: () => void;
   addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => void;
+  updateUserDetails: (details: UserDetails) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,7 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -62,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDetails = userDetailsStore[firebaseUser.uid] || {};
         const currentUser: User = {
           uid: firebaseUser.uid,
-          email: firebaseUser.email,
+          phoneNumber: firebaseUser.phoneNumber,
           ...userDetails
         };
         setUser(currentUser);
@@ -87,47 +95,92 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(`healthConnectAppointments_${userId}`, JSON.stringify(newAppointments));
   }
   
-  const handleAuthSuccess = (firebaseUser: FirebaseUser, details?: UserDetails) => {
-    const userDetails = details || userDetailsStore[firebaseUser.uid] || {};
-     if(details) {
-        userDetailsStore[firebaseUser.uid] = details; // Save details
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
     }
-    const currentUser: User = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        ...userDetails
-    };
-    setUser(currentUser);
-    toast({ title: "Success", description: "Logged in successfully." });
-    router.push('/profile');
+    return window.recaptchaVerifier;
   }
 
-  const handleAuthError = (error: any) => {
-    console.error("Authentication error:", error);
-    toast({
-        variant: "destructive",
-        title: "Authentication Failed",
-        description: error.message || "An unexpected error occurred.",
-    });
-    throw error;
-  }
-
-  const login = async (email: string, pass: string) => {
+  const loginWithPhone = async (phone: string) => {
+    const loadingToast = toast.loading('Sending OTP...');
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-        handleAuthSuccess(userCredential.user);
-    } catch (error) {
-        handleAuthError(error);
+        const appVerifier = setupRecaptcha();
+        const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+        window.confirmationResult = confirmationResult;
+        toast.dismiss(loadingToast);
+        toast.success('OTP sent successfully!');
+    } catch(error: any) {
+        toast.dismiss(loadingToast);
+        console.error("OTP Error:", error);
+
+        if (error.code === 'auth/invalid-phone-number') {
+            toast.error('Invalid phone number provided. Please check the format.');
+        } else if (error.code === 'auth/too-many-requests') {
+            toast.error('Too many requests. Please try again later.');
+        } else if (error.code === 'auth/configuration-not-found' || error.code === 'auth/billing-not-enabled') {
+             toast.error('App configuration error. Please contact support.');
+        }
+        else {
+            toast.error('Failed to send OTP. Please try again.');
+        }
+        // Reset reCAPTCHA if it exists to allow retries
+        window.recaptchaVerifier?.clear();
+        throw error;
     }
   }
 
-  const signup = async (email: string, pass: string, details: UserDetails) => {
+  const verifyOtp = async (otp: string) => {
+    const loadingToast = toast.loading('Verifying OTP...');
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-        handleAuthSuccess(userCredential.user, details);
-    } catch(error) {
-        handleAuthError(error);
+      if(window.confirmationResult) {
+        const result = await window.confirmationResult.confirm(otp);
+        const firebaseUser = result.user;
+        const userDetails = userDetailsStore[firebaseUser.uid] || {};
+        const currentUser: User = {
+          uid: firebaseUser.uid,
+          phoneNumber: firebaseUser.phoneNumber,
+          ...userDetails
+        };
+        setUser(currentUser);
+        toast.dismiss(loadingToast);
+        toast.success('Logged in successfully!');
+        
+        // Redirect logic after login
+        const hasCompletedProfile = userDetails.name && userDetails.address;
+        if(hasCompletedProfile) {
+          router.push('/profile');
+        } else {
+          router.push('/signup');
+        }
+      } else {
+         throw new Error("No confirmation result found. Please try sending the OTP again.");
+      }
+    } catch(error: any) {
+        toast.dismiss(loadingToast);
+        console.error("OTP Verification Error:", error);
+        if(error.code === 'auth/invalid-verification-code'){
+            toast.error('Invalid OTP. Please try again.');
+        } else {
+            toast.error('Failed to verify OTP. Please try again.');
+        }
+        throw error;
     }
+  }
+
+  const updateUserDetails = (details: UserDetails) => {
+      if(user) {
+          userDetailsStore[user.uid] = details;
+          const updatedUser = { ...user, ...details };
+          setUser(updatedUser);
+          toast.success("Profile updated!");
+          router.push('/profile');
+      }
   }
 
   const logout = async () => {
@@ -135,11 +188,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await auth.signOut();
       setUser(null);
       setAppointments([]);
-      toast({ title: "Logged Out", description: "You have been logged out successfully."});
+      toast.success("You have been logged out successfully.");
       router.push('/login');
     } catch (error) {
       console.error("Logout error:", error);
-      toast({ variant: "destructive", title: "Logout Failed" });
+      toast.error("Logout Failed");
     }
   };
 
@@ -148,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newAppointment: Appointment = {
           ...appointmentData,
           id: appointments.length + 1,
-          user: user.name || user.email || 'Unknown',
+          user: user.name || user.phoneNumber || 'Unknown',
           status: 'Pending',
       }
       const newAppointments = [...appointments, newAppointment];
@@ -157,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, appointments, login, signup, logout, addAppointment }}>
+    <AuthContext.Provider value={{ user, loading, appointments, loginWithPhone, verifyOtp, logout, addAppointment, updateUserDetails }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Loader2, LogIn, Mail } from 'lucide-react';
+import { Bell, Loader2, LogIn, Phone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -122,18 +122,18 @@ export function BookingModal({
                   </Label>
                   <Input
                     id="name"
-                    value={user.name || 'Anonymous'}
+                    value={user.name || 'Anonymous User'}
                     className="col-span-3"
                     disabled
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
+                  <Label htmlFor="phone" className="text-right">
+                    Phone
                   </Label>
                   <Input
-                    id="email"
-                    value={user.email || ''}
+                    id="phone"
+                    value={user.phoneNumber || ''}
                     className="col-span-3"
                     disabled
                   />
@@ -163,20 +163,27 @@ export function BookingModal({
                   </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
-                  {isConfirming ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Confirming...
-                    </>
-                  ) : (
-                    'Confirm Booking'
-                  )}
-                </Button>
-              </DialogFooter>
+              {!user.name || !user.address ? (
+                 <div className='text-center'>
+                    <p className='text-sm text-destructive mb-2'>Please complete your profile to book appointments.</p>
+                    <Button onClick={() => router.push('/signup')}>Complete Profile</Button>
+                 </div>
+              ) : (
+                <DialogFooter>
+                  <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
+                    {isConfirming ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Confirming...
+                      </>
+                    ) : (
+                      'Confirm Booking'
+                    )}
+                  </Button>
+                </DialogFooter>
+              )}
               <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
-                  <Bell className="h-4 w-4" /> You'll receive an email reminder 24 hours before your appointment.
+                  <Bell className="h-4 w-4" /> You'll receive an SMS reminder 24 hours before your appointment.
               </p>
             </>
           )}

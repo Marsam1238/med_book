@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Mail, Home, Calendar, Clock } from 'lucide-react';
+import { User, Phone, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -48,10 +48,10 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4 p-4 border rounded-lg">
-                <Mail className="h-5 w-5 text-muted-foreground" />
+                <Phone className="h-5 w-5 text-muted-foreground" />
                 <div className="text-sm">
-                    <p className="text-muted-foreground">Email Address</p>
-                    <p className="font-medium">{user.email}</p>
+                    <p className="text-muted-foreground">Phone Number</p>
+                    <p className="font-medium">{user.phoneNumber}</p>
                 </div>
             </div>
             {user.address && (
@@ -104,7 +104,9 @@ export default function ProfilePage() {
                     )}
                 </CardContent>
             </Card>
-
+             <Button onClick={logout} variant="outline" className="w-full mt-4">
+                Logout
+            </Button>
           </CardContent>
         </Card>
       </div>

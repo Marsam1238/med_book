@@ -14,36 +14,49 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { UserPlus } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const { signup } = useAuth();
+  const { user, updateUserDetails } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async () => {
-    if(!email || !password || !name || !address) {
-        toast({
-            variant: "destructive",
-            title: "Missing Fields",
-            description: "Please fill in all fields.",
-        });
+  if (!user) {
+     // Not logged in via OTP yet, show a message or redirect.
+      return (
+         <div className="flex items-center justify-center min-h-[calc(100vh-14rem)] py-12 bg-background">
+            <Card className="mx-auto max-w-sm w-full text-center">
+                 <CardHeader>
+                    <CardTitle className="text-2xl font-headline">Complete Your Profile</CardTitle>
+                    <CardDescription>
+                        Please log in with your phone number first to create an account.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild className="w-full">
+                        <Link href="/login">Go to Login</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+      )
+  }
+
+  const handleProfileUpdate = () => {
+    if (!name || !address) {
+        alert("Please fill in all fields.");
         return;
     }
     setLoading(true);
     try {
-        await signup(email, password, { name, address });
-        // On success, the AuthContext will redirect
+        updateUserDetails({ name, address });
+        // Redirect is handled in AuthContext
     } catch (error) {
-        // Error is handled in AuthContext
+        console.error(error);
     } finally {
         setLoading(false);
     }
@@ -54,10 +67,10 @@ export default function SignupPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-headline flex items-center gap-2">
-            <UserPlus className="h-6 w-6" /> Create an Account
+            <UserPlus className="h-6 w-6" /> Complete Your Account
           </CardTitle>
           <CardDescription>
-            Enter your details to get started.
+            You're almost there! Just add your details. Your phone number is {user.phoneNumber}.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,27 +86,6 @@ export default function SignupPage() {
               />
             </div>
              <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-             <div className="grid gap-2">
               <Label htmlFor="address">Address</Label>
               <Textarea
                 id="address"
@@ -103,15 +95,9 @@ export default function SignupPage() {
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
-            <Button onClick={handleSignup} disabled={loading} className="w-full">
-              {loading ? "Creating account..." : "Create Account"}
+            <Button onClick={handleProfileUpdate} disabled={loading} className="w-full">
+              {loading ? "Saving..." : "Save and Continue"}
             </Button>
-             <div className="mt-4 text-center text-sm">
-                Already have an account?{' '}
-                <Link href="/login" className="underline">
-                Login
-                </Link>
-            </div>
           </div>
         </CardContent>
       </Card>
