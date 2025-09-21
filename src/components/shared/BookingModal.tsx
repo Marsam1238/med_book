@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +22,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Loader2 } from 'lucide-react';
+import { Bell, Loader2, LogIn } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -48,9 +51,12 @@ export function BookingModal({
   itemName,
 }: BookingModalProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const router = useRouter();
+
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>('');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
 
@@ -75,6 +81,25 @@ export function BookingModal({
     }, 1500);
   };
 
+  if (!user) {
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="font-headline">Login Required</DialogTitle>
+                    <DialogDescription>
+                        You need to be logged in to book an appointment.
+                    </DialogDescription>
+                </DialogHeader>
+                <Button onClick={() => router.push('/login')}>
+                    <LogIn className="mr-2" />
+                    Go to Login
+                </Button>
+            </DialogContent>
+        </Dialog>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -95,6 +120,7 @@ export function BookingModal({
               onChange={(e) => setName(e.target.value)}
               className="col-span-3"
               placeholder="John Doe"
+              disabled
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

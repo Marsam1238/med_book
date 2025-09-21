@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, Stethoscope, UserCog } from 'lucide-react';
+import { Menu, Stethoscope, UserCog, User, LogOut, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -19,17 +20,21 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   const NavLinks = ({
     className,
+    onLinkClick,
   }: {
     className?: string;
+    onLinkClick?: () => void;
   }) => (
     <nav className={cn('flex items-center space-x-4 lg:space-x-6', className)}>
       {navLinks.map((link) => (
         <Link
           key={link.href}
           href={link.href}
+          onClick={onLinkClick}
           className={cn(
             'text-sm font-medium transition-colors hover:text-primary',
             pathname === link.href ? 'text-primary' : 'text-muted-foreground'
@@ -53,15 +58,35 @@ export function Header() {
           <NavLinks />
         </div>
         
-        <div className="flex flex-1 items-center justify-end gap-4">
-           <div className="hidden md:flex">
-             <Button asChild variant="ghost">
+        <div className="flex flex-1 items-center justify-end gap-2">
+           <div className="hidden md:flex items-center gap-2">
+            {user ? (
+              <>
+                <Button asChild variant="ghost">
+                  <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
+                </Button>
+                <Button onClick={logout} variant="outline">
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost">
+                  <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/signup"><UserPlus className="mr-2 h-4 w-4" />Sign Up</Link>
+                </Button>
+              </>
+            )}
+             <Button asChild variant="secondary">
                 <Link href="/admin">
                     <UserCog className="mr-2 h-4 w-4" />
-                    Admin Panel
+                    Admin
                 </Link>
              </Button>
            </div>
+
           <div className="flex md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -73,12 +98,33 @@ export function Header() {
               <SheetContent side="right">
                 <div className="flex flex-col space-y-4 pt-6">
                   <NavLinks className="flex-col space-x-0 space-y-4 items-start" />
-                   <Button asChild variant="ghost" className="justify-start">
+                  <div className="border-t pt-4 space-y-2">
+                     {user ? (
+                        <>
+                          <Button asChild variant="ghost" className="w-full justify-start">
+                            <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
+                          </Button>
+                           <Button onClick={logout} variant="outline" className="w-full justify-start">
+                            <LogOut className="mr-2 h-4 w-4" /> Logout
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button asChild variant="ghost" className="w-full justify-start">
+                            <Link href="/login"><LogIn className="mr-2 h-4 w-4" />Login</Link>
+                          </Button>
+                          <Button asChild className="w-full justify-start">
+                            <Link href="/signup"><UserPlus className="mr-2 h-4 w-4" />Sign Up</Link>
+                          </Button>
+                        </>
+                      )}
+                    <Button asChild variant="ghost" className="justify-start">
                       <Link href="/admin">
                           <UserCog className="mr-2 h-4 w-4" />
                           Admin Panel
                       </Link>
                    </Button>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
