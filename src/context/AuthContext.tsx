@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(`healthConnectAppointments_${userId}`, JSON.stringify(newAppointments));
   }
 
-  const setupRecaptcha = (phone: string) => {
+  const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
@@ -95,23 +95,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
     }
+    return window.recaptchaVerifier;
   }
 
   const loginWithPhone = async (phone: string) => {
     try {
-        setupRecaptcha(phone);
-        const appVerifier = window.recaptchaVerifier!;
+        const appVerifier = setupRecaptcha();
         const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
         window.confirmationResult = confirmationResult;
         toast.success('OTP sent successfully!');
     } catch(error) {
         console.error("Error sending OTP:", error);
-        toast.error('Failed to send OTP. Please try again.');
+        toast.error('Failed to send OTP. Please make sure to use a valid phone number with country code.');
         // Reset reCAPTCHA so user can try again.
         if (window.recaptchaVerifier) {
             window.recaptchaVerifier.render().then((widgetId) => {
                 // @ts-ignore
-                grecaptcha.reset(widgetId);
+                if(window.grecaptcha) {
+                    // @ts-ignore
+                    window.grecaptcha.reset(widgetId);
+                }
             });
         }
     }
