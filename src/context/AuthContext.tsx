@@ -85,27 +85,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(`healthConnectAppointments_${userId}`, JSON.stringify(newAppointments));
   }
 
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+  const setupRecaptcha = (phone: string) => {
+    // Note: The 'recaptcha-container' must be visible.
+    // We are using an invisible reCAPTCHA, but the container must exist.
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': (response: any) => {
           // reCAPTCHA solved, allow signInWithPhoneNumber.
+          // This callback is for v2 invisible reCAPTCHA, might not be
+          // necessary for v3 but good to have.
         }
       });
-    }
-    return window.recaptchaVerifier;
   }
 
   const loginWithPhone = async (phone: string) => {
     try {
-        const appVerifier = setupRecaptcha();
+        setupRecaptcha(phone);
+        const appVerifier = window.recaptchaVerifier!;
         const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
         window.confirmationResult = confirmationResult;
         toast.success('OTP sent successfully!');
     } catch(error) {
         console.error("Error sending OTP:", error);
-        toast.error('Failed to send OTP. Please ensure you have entered a valid phone number including the country code.');
+        toast.error('Failed to send OTP. Please ensure you have entered a valid phone number including the country code and that the reCAPTCHA is working.');
+        
         // Reset reCAPTCHA so user can try again.
         if (window.recaptchaVerifier) {
             window.recaptchaVerifier.render().then((widgetId) => {
