@@ -91,7 +91,7 @@ export function BookingModal({
     return null;
   }
   
-  const isProfileIncomplete = !user?.name || !user?.address;
+  const isProfileIncomplete = user ? !user.name || !user.address : true;
 
   return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -111,67 +111,70 @@ export function BookingModal({
             </>
           ) : (
             <>
-              <DialogHeader>
-                <DialogTitle className="font-headline">{title}</DialogTitle>
-                <DialogDescription>
-                  Confirm your details and select a date and time.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={user.name || 'Anonymous User'}
-                    className="col-span-3"
-                    disabled
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="phone" className="text-right">
-                    Phone
-                  </Label>
-                  <Input
-                    id="phone"
-                    value={user.phone || ''}
-                    className="col-span-3"
-                    disabled
-                  />
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    className="rounded-md border"
-                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-                  />
-                  <div className="flex-grow space-y-2">
-                    <Label>Time</Label>
-                    <Select onValueChange={setTime} value={time}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeSlots.map((slot) => (
-                          <SelectItem key={slot} value={slot}>
-                            {slot}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              <div className="md:flex-grow md:overflow-y-auto pr-6 -mr-6">
+                <DialogHeader>
+                  <DialogTitle className="font-headline">{title}</DialogTitle>
+                  <DialogDescription>
+                    Confirm your details and select a date and time.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={user.name || 'Anonymous User'}
+                      className="col-span-3"
+                      disabled
+                    />
                   </div>
-                </div>
-                 {isProfileIncomplete && (
-                    <div className='text-center mt-4 p-3 bg-yellow-100/50 border border-yellow-200 rounded-md'>
-                        <p className='text-sm text-yellow-800 font-medium mb-2'>Please complete your profile to book appointments.</p>
-                        <Button variant="secondary" size="sm" onClick={() => router.push('/signup')}>Complete Profile</Button>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="phone" className="text-right">
+                      Phone
+                    </Label>
+                    <Input
+                      id="phone"
+                      value={user.phone || ''}
+                      className="col-span-3"
+                      disabled
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      className="rounded-md border mx-auto"
+                      disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                    />
+                    <div className="flex-grow space-y-2">
+                      <Label>Time</Label>
+                      <Select onValueChange={setTime} value={time}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {timeSlots.map((slot) => (
+                            <SelectItem key={slot} value={slot}>
+                              {slot}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
+                  </div>
+                  {isProfileIncomplete && (
+                      <div className='text-center mt-4 p-3 bg-yellow-100/50 border border-yellow-200 rounded-md'>
+                          <p className='text-sm text-yellow-800 font-medium mb-2'>Please complete your profile to book appointments.</p>
+                          <Button variant="secondary" size="sm" onClick={() => router.push('/signup')}>Complete Profile</Button>
+                      </div>
+                    )}
+                </div>
               </div>
-              <DialogFooter>
+
+              <DialogFooter className="md:flex-shrink-0">
                   <Button onClick={handleBooking} disabled={isConfirming || isProfileIncomplete} className="w-full">
                     {isConfirming ? (
                       <>
@@ -183,7 +186,7 @@ export function BookingModal({
                     )}
                   </Button>
               </DialogFooter>
-              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
+              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2 md:flex-shrink-0">
                   <Bell className="h-4 w-4" /> You'll receive a confirmation on your phone.
               </p>
             </>
