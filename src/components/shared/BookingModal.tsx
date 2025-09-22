@@ -86,11 +86,13 @@ export function BookingModal({
       });
     }, 1500);
   };
-
+  
   if (!isOpen) {
     return null;
   }
   
+  const isProfileIncomplete = !user?.name || !user?.address;
+
   return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[425px]">
@@ -163,14 +165,14 @@ export function BookingModal({
                   </div>
                 </div>
               </div>
-              {!user.name || !user.address ? (
-                 <div className='text-center'>
-                    <p className='text-sm text-destructive mb-2'>Please complete your profile to book appointments.</p>
-                    <Button onClick={() => router.push('/signup')}>Complete Profile</Button>
-                 </div>
-              ) : (
-                <DialogFooter>
-                  <Button onClick={handleBooking} disabled={isConfirming} className="w-full">
+              <DialogFooter className="flex flex-col gap-2">
+                 {isProfileIncomplete && (
+                    <div className='text-center'>
+                        <p className='text-sm text-destructive mb-2'>Please complete your profile to book appointments.</p>
+                        <Button variant="secondary" onClick={() => router.push('/signup')}>Complete Profile</Button>
+                    </div>
+                  )}
+                  <Button onClick={handleBooking} disabled={isConfirming || isProfileIncomplete} className="w-full">
                     {isConfirming ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -180,8 +182,7 @@ export function BookingModal({
                       'Confirm Booking'
                     )}
                   </Button>
-                </DialogFooter>
-              )}
+              </DialogFooter>
               <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
                   <Bell className="h-4 w-4" /> You'll receive a confirmation on your phone.
               </p>
