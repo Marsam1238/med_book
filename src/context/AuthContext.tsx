@@ -20,6 +20,10 @@ export interface Appointment {
   date: string;
   time: string;
   status: 'Pending' | 'Confirmed';
+  clinic?: string;
+  ticketNumber?: string;
+  fees?: string;
+  address?: string;
 }
 
 interface UserDetails {
@@ -84,6 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const login = async (phone: string, password: string) => {
+    if (phone.length !== 10) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Phone Number',
+        description: 'Phone number must be 10 digits.',
+      });
+      return;
+    }
     const userEntry = Object.values(userStore).find(u => u.phone === phone);
     
     if (userEntry && passwordStore[userEntry.uid] === password) {
@@ -98,6 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signup = async (phone: string, password: string, details: UserDetails) => {
+      if (phone.length !== 10) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid Phone Number',
+          description: 'Phone number must be 10 digits.',
+        });
+        return;
+      }
       if (Object.values(userStore).some(u => u.phone === phone)) {
           throw new Error('An account with this phone number already exists.');
       }

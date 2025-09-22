@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Phone, Home } from 'lucide-react';
+import { User, Phone, Home, Building, Ticket, DollarSign, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -78,18 +78,24 @@ export default function ProfilePage() {
                        <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Item</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead>Date & Time</TableHead>
+                              <TableHead>Appointment</TableHead>
+                              <TableHead>Details</TableHead>
                               <TableHead>Status</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {appointments.map(apt => (
                               <TableRow key={apt.id}>
-                                <TableCell>{apt.item}</TableCell>
-                                <TableCell>{apt.type}</TableCell>
-                                <TableCell>{apt.date} at {apt.time}</TableCell>
+                                <TableCell>
+                                    <p className="font-bold">{apt.item}</p>
+                                    <p className="text-sm text-muted-foreground">{apt.date} at {apt.time}</p>
+                                </TableCell>
+                                <TableCell className="space-y-1">
+                                  {apt.clinic && <p className="flex items-center gap-2 text-sm"><Building className="h-4 w-4" /> {apt.clinic}</p>}
+                                  {apt.address && <p className="flex items-center gap-2 text-sm"><MapPin className="h-4 w-4" /> {apt.address}</p>}
+                                  {apt.ticketNumber && <p className="flex items-center gap-2 text-sm"><Ticket className="h-4 w-4" /> Ticket: {apt.ticketNumber}</p>}
+                                  {apt.fees && <p className="flex items-center gap-2 text-sm"><DollarSign className="h-4 w-4" /> Fees: {apt.fees}</p>}
+                                </TableCell>
                                 <TableCell>
                                   <Badge variant={apt.status === 'Confirmed' ? 'default' : 'secondary'} className={apt.status === 'Confirmed' ? 'bg-green-600' : ''}>
                                     {apt.status}
