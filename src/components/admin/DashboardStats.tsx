@@ -2,39 +2,34 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar, CheckCircle, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-
-// Mock data similar to what's in the tables
-const mockAppointments = [
-  { id: 1, date: '2024-08-15', status: 'Pending' },
-  { id: 2, date: new Date().toISOString().split('T')[0], status: 'Pending' }, // Today
-  { id: 3, date: '2024-08-16', status: 'Confirmed' },
-  { id: 4, date: new Date().toISOString().split('T')[0], status: 'Confirmed' }, // Today
-];
-
-const mockPrescriptions = [
-  { id: 1, status: 'Pending Review' },
-  { id: 2, status: 'Approved' },
-  { id: 3, status: 'Rejected' },
-  { id: 4, status: 'Approved' },
-];
+import { useAuth } from "@/context/AuthContext";
 
 export function DashboardStats() {
+  const { allAppointments } = useAuth();
   const [stats, setStats] = useState({
     todaysAppointments: 0,
     confirmedAppointments: 0,
-    approvedPrescriptions: 0,
-    rejectedPrescriptions: 0,
+    pendingAppointments: 0,
   });
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString();
     
-    const todaysAppointments = mockAppointments.filter(apt => apt.date === today).length;
-    const confirmedAppointments = mockAppointments.filter(apt => apt.status === 'Confirmed').length;
+    const todaysAppointments = allAppointments.filter(apt => apt.date === today).length;
+    const confirmedAppointments = allAppointments.filter(apt => apt.status === 'Confirmed').length;
+    
+    // Mock data for prescriptions as it's not in the main data flow yet
+    const mockPrescriptions = [
+      { id: 1, status: 'Pending Review' },
+      { id: 2, status: 'Approved' },
+      { id: 3, status: 'Rejected' },
+      { id: 4, status: 'Approved' },
+    ];
     const approvedPrescriptions = mockPrescriptions.filter(p => p.status === 'Approved').length;
     const rejectedPrescriptions = mockPrescriptions.filter(p => p.status === 'Rejected').length;
+
 
     setStats({
       todaysAppointments,
@@ -43,7 +38,7 @@ export function DashboardStats() {
       rejectedPrescriptions
     });
 
-  }, []);
+  }, [allAppointments]);
 
   const statCards = [
     { title: "Today's Appointments", value: stats.todaysAppointments, icon: <Calendar className="h-6 w-6 text-primary" />, color: "text-primary" },

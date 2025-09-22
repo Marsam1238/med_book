@@ -25,15 +25,12 @@ export function AppointmentsTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleConfirm = (id: number) => {
-    const appointmentToUpdate = allAppointments.find(apt => apt.id === id);
-    if(appointmentToUpdate) {
-        updateAppointment({ ...appointmentToUpdate, status: 'Confirmed' });
-        toast({
-            title: 'Appointment Confirmed',
-            description: `Appointment #${id} has been marked as confirmed.`,
-        })
-    }
+  const handleConfirm = (id: string) => {
+    updateAppointment({ id, status: 'Confirmed' });
+    toast({
+        title: 'Appointment Confirmed',
+        description: `Appointment #${id.substring(0,5)} has been marked as confirmed.`,
+    })
   };
 
   const openDetailsModal = (appointment: Appointment) => {
@@ -41,7 +38,7 @@ export function AppointmentsTable() {
     setIsModalOpen(true);
   };
 
-  const handleSaveDetails = (updatedAppointment: Appointment) => {
+  const handleSaveDetails = (updatedAppointment: Partial<Appointment> & { id: string }) => {
     updateAppointment(updatedAppointment);
   };
 

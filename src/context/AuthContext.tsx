@@ -4,16 +4,32 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  addDoc,
+  getDoc,
+  onSnapshot,
+  Timestamp,
+  orderBy,
+} from 'firebase/firestore';
+
 
 interface User {
   uid: string;
-  phone: string | null;
+  phone: string;
   name?: string;
   address?: string;
 }
 
 export interface Appointment {
-  id: number;
+  id: string; // Firestore document ID
   user: {
     uid: string;
     name: string;
@@ -29,6 +45,7 @@ export interface Appointment {
   ticketNumber?: string;
   fees?: string;
   address?: string;
+  createdAt: Timestamp;
 }
 
 interface UserDetails {
@@ -43,119 +60,140 @@ interface AuthContextType {
   login: (phone: string, password: string) => Promise<void>;
   signup: (phone: string, password: string, details: UserDetails) => Promise<void>;
   logout: () => void;
-  addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => void;
+  addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status' | 'createdAt'>) => void;
   updateUserDetails: (details: UserDetails) => void;
   allAppointments: Appointment[];
-  updateAppointment: (updatedAppointment: Appointment) => void;
+  updateAppointment: (updatedAppointment: Partial<Appointment> & { id: string }) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock user database for storing registered users and their details
-const userStore: { [key: string]: User } = {
-    'user-123': {
-        uid: 'user-123',
-        phone: '1234567890',
-        name: 'Demo User',
-        address: '123 Health St, Wellness City'
-    }
-};
-const passwordStore: { [key: string]: string } = {
-    'user-123': 'password'
-};
-
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
+  const [userAppointments, setUserAppointments] = useState<Appointment[]>([]);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if a user is saved in local storage to persist login
+    // Check for persisted user
     const savedUser = localStorage.getItem('healthConnectUser');
     if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
+      const parsedUser: User = JSON.parse(savedUser);
+      setUser(parsedUser);
+      // Optional: Re-validate user with Firestore
+      const userDocRef = doc(db, 'users', parsedUser.uid);
+      getDoc(userDocRef).then((docSnap) => {
+        if (docSnap.exists()) {
+          setUser(docSnap.data() as User);
+        } else {
+          // User not in DB, clear local storage
+          logout();
+        }
+      })
     }
-    loadAllAppointments();
     setLoading(false);
   }, []);
 
-  const loadAllAppointments = () => {
-    const storedAppointments = localStorage.getItem('healthConnectAllAppointments');
-    if (storedAppointments) {
-      setAllAppointments(JSON.parse(storedAppointments));
-    }
-  }
+  useEffect(() => {
+    // Listen for all appointments in real-time
+    const q = query(collection(db, 'appointments'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const appointmentsData: Appointment[] = [];
+      querySnapshot.forEach((doc) => {
+        appointmentsData.push({ id: doc.id, ...doc.data() } as Appointment);
+      });
+      setAllAppointments(appointmentsData);
+    });
 
-  const saveAllAppointments = (newAppointments: Appointment[]) => {
-      setAllAppointments(newAppointments);
-      localStorage.setItem('healthConnectAllAppointments', JSON.stringify(newAppointments));
-  }
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      const userApts = allAppointments.filter(apt => apt.user.uid === user.uid);
+      setUserAppointments(userApts);
+    } else {
+      setUserAppointments([]);
+    }
+  }, [user, allAppointments]);
+  
 
   const login = async (phone: string, password: string) => {
     if (phone.length !== 10) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Phone Number',
-        description: 'Phone number must be 10 digits.',
-      });
-      return;
+      throw new Error('Phone number must be 10 digits.');
     }
-    const userEntry = Object.values(userStore).find(u => u.phone === phone);
+
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('phone', '==', phone));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error('No account found with this phone number.');
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data();
     
-    if (userEntry && passwordStore[userEntry.uid] === password) {
-        setUser(userEntry);
-        localStorage.setItem('healthConnectUser', JSON.stringify(userEntry));
-        loadAllAppointments();
-        toast({ title: 'Login Successful' });
-        router.push('/profile');
-    } else {
-        throw new Error('Invalid phone number or password.');
+    // NOTE: In a real app, password would be hashed and checked on a server.
+    // This is a simplified check for the demo.
+    const passwordDocRef = doc(db, `user_passwords/${userDoc.id}`);
+    const passwordSnap = await getDoc(passwordDocRef);
+
+    if (!passwordSnap.exists() || passwordSnap.data().password !== password) {
+      throw new Error('Invalid phone number or password.');
     }
-  }
+
+    const loggedInUser: User = { uid: userDoc.id, ...userData } as User;
+    setUser(loggedInUser);
+    localStorage.setItem('healthConnectUser', JSON.stringify(loggedInUser));
+
+    toast({ title: 'Login Successful' });
+    router.push('/profile');
+  };
 
   const signup = async (phone: string, password: string, details: UserDetails) => {
-      if (phone.length !== 10) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid Phone Number',
-          description: 'Phone number must be 10 digits.',
-        });
-        return;
-      }
-      if (Object.values(userStore).some(u => u.phone === phone)) {
-          throw new Error('An account with this phone number already exists.');
-      }
+    if (phone.length !== 10) {
+        throw new Error('Phone number must be 10 digits.');
+    }
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('phone', '==', phone));
+    const querySnapshot = await getDocs(q);
 
-      const newUid = `user-${Date.now()}`;
-      const newUser: User = {
-          uid: newUid,
-          phone,
-          ...details,
-      };
+    if (!querySnapshot.empty) {
+        throw new Error('An account with this phone number already exists.');
+    }
 
-      userStore[newUid] = newUser;
-      passwordStore[newUid] = password;
+    const newUserRef = doc(collection(db, 'users'));
+    const newUser: User = {
+        uid: newUserRef.id,
+        phone,
+        ...details,
+    };
 
-      setUser(newUser);
-      localStorage.setItem('healthConnectUser', JSON.stringify(newUser));
-      toast({ title: 'Account created successfully!' });
-      router.push('/profile');
-  }
+    await setDoc(newUserRef, newUser);
+    
+    // Store password separately (again, simplified for demo)
+    await setDoc(doc(db, `user_passwords/${newUserRef.id}`), { password });
 
-  const updateUserDetails = (details: UserDetails) => {
-      if(user) {
-          const updatedUser = { ...user, ...details };
-          userStore[user.uid] = updatedUser;
-          setUser(updatedUser);
-          localStorage.setItem('healthConnectUser', JSON.stringify(updatedUser));
-          toast({ title: 'Profile updated!'});
-          router.push('/profile');
-      }
-  }
+    setUser(newUser);
+    localStorage.setItem('healthConnectUser', JSON.stringify(newUser));
+    toast({ title: 'Account created successfully!' });
+    router.push('/profile');
+  };
+
+  const updateUserDetails = async (details: UserDetails) => {
+    if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, details);
+        const updatedUser = { ...user, ...details };
+        setUser(updatedUser);
+        localStorage.setItem('healthConnectUser', JSON.stringify(updatedUser));
+        toast({ title: 'Profile updated!'});
+        router.push('/profile');
+    }
+  };
 
   const logout = async () => {
     setUser(null);
@@ -164,30 +202,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
-  const addAppointment = (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => {
-      if(!user || !user.name || !user.phone || !user.address) return;
-      const newAppointment: Appointment = {
-          ...appointmentData,
-          id: allAppointments.length + 1,
-          user: {
-            uid: user.uid,
-            name: user.name,
-            phone: user.phone,
-            address: user.address,
-          },
-          status: 'Pending',
-      }
-      const newAppointments = [...allAppointments, newAppointment];
-      saveAllAppointments(newAppointments);
-  }
-
-  const updateAppointment = (updatedAppointment: Appointment) => {
-      const newAppointments = allAppointments.map(apt => apt.id === updatedAppointment.id ? updatedAppointment : apt);
-      saveAllAppointments(newAppointments);
+  const addAppointment = async (appointmentData: Omit<Appointment, 'id' | 'user' | 'status' | 'createdAt'>) => {
+    if (!user || !user.name || !user.phone || !user.address) {
+      toast({
+        variant: 'destructive',
+        title: 'Profile Incomplete',
+        description: 'Please complete your profile before booking.',
+      });
+      return;
+    }
+    
+    const newAppointment = {
+        ...appointmentData,
+        user: {
+          uid: user.uid,
+          name: user.name,
+          phone: user.phone,
+          address: user.address,
+        },
+        status: 'Pending' as 'Pending' | 'Confirmed',
+        createdAt: Timestamp.now(),
+    };
+    await addDoc(collection(db, 'appointments'), newAppointment);
   };
-  
-  const userAppointments = user ? allAppointments.filter(apt => apt.user.uid === user.uid) : [];
 
+  const updateAppointment = async (updatedAppointment: Partial<Appointment> & { id: string }) => {
+    const { id, ...dataToUpdate } = updatedAppointment;
+    const appointmentDocRef = doc(db, 'appointments', id);
+    await updateDoc(appointmentDocRef, dataToUpdate);
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, appointments: userAppointments, login, signup, logout, addAppointment, updateUserDetails, allAppointments, updateAppointment }}>

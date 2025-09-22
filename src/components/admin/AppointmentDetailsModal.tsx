@@ -19,7 +19,7 @@ import { Appointment } from '@/context/AuthContext';
 interface AppointmentDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (appointment: Appointment) => void;
+  onSave: (appointment: Partial<Appointment> & { id: string }) => void;
   appointment: Appointment;
 }
 
@@ -44,12 +44,11 @@ export function AppointmentDetailsModal({ isOpen, onClose, onSave, appointment }
   };
 
   const handleSubmit = () => {
-    const updatedAppointment: Appointment = { ...appointment, ...formData };
-    onSave(updatedAppointment);
+    onSave({ id: appointment.id, ...formData });
     onClose();
     toast({
       title: `Appointment Details Updated`,
-      description: `Details for appointment #${appointment.id} have been saved.`,
+      description: `Details for appointment #${appointment.id.substring(0, 5)} have been saved.`,
     });
   };
 
