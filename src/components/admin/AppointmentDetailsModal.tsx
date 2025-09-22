@@ -44,7 +44,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onSave, appointment }
   };
 
   const handleSubmit = () => {
-    const updatedAppointment = { ...appointment, ...formData };
+    const updatedAppointment: Appointment = { ...appointment, ...formData, user: appointment.user };
     onSave(updatedAppointment);
     onClose();
     toast({
@@ -68,7 +68,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onSave, appointment }
             <Input id="clinic" value={formData.clinic} onChange={handleChange} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="address" className="text-right">Address</Label>
+            <Label htmlFor="address" className="text-right">Clinic Address</Label>
             <Input id="address" value={formData.address} onChange={handleChange} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

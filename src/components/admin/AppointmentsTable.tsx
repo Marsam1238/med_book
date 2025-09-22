@@ -13,20 +13,20 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Edit } from 'lucide-react';
+import { CheckCircle, Edit, Home, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Appointment } from '@/context/AuthContext';
 import { AppointmentDetailsModal } from './AppointmentDetailsModal';
 
-const mockAppointments: Appointment[] = [
-  { id: 1, user: 'Alice Johnson', item: 'Dr. Emily Carter', type: 'Doctor', date: '2024-08-15', time: '10:00 AM', status: 'Pending' },
-  { id: 2, user: 'Bob Williams', item: 'Complete Blood Count (CBC)', type: 'Lab Test', date: '2024-08-16', time: '09:00 AM', status: 'Pending' },
-  { id: 3, user: 'Charlie Brown', item: 'Dr. Ben Adams', type: 'Doctor', date: '2024-08-16', time: '02:00 PM', status: 'Confirmed', clinic: 'Downtown Clinic', ticketNumber: 'A101', fees: '$150', address: '123 Main St' },
+const mockAppointments: (Omit<Appointment, 'user'> & { user: { name: string; phone: string; address: string; } })[] = [
+  { id: 1, user: { name: 'Alice Johnson', phone: '555-0101', address: '123 Maple St, Springfield' }, item: 'Dr. Emily Carter', type: 'Doctor', date: '2024-08-15', time: '10:00 AM', status: 'Pending' },
+  { id: 2, user: { name: 'Bob Williams', phone: '555-0102', address: '456 Oak Ave, Metropolis' }, item: 'Complete Blood Count (CBC)', type: 'Lab Test', date: '2024-08-16', time: '09:00 AM', status: 'Pending' },
+  { id: 3, user: { name: 'Charlie Brown', phone: '555-0103', address: '789 Pine Ln, Gotham' }, item: 'Dr. Ben Adams', type: 'Doctor', date: '2024-08-16', time: '02:00 PM', status: 'Confirmed', clinic: 'Downtown Clinic', ticketNumber: 'A101', fees: '$150', address: '123 Main St' },
 ];
 
 export function AppointmentsTable() {
   const [appointments, setAppointments] = useState(mockAppointments);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<(Omit<Appointment, 'user'> & { user: { name: string; phone: string; address: string; } }) | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
@@ -42,13 +42,25 @@ export function AppointmentsTable() {
     })
   };
 
-  const openDetailsModal = (appointment: Appointment) => {
+  const openDetailsModal = (appointment: (Omit<Appointment, 'user'> & { user: { name: string; phone: string; address: string; } })) => {
+    // We need to cast this back to Appointment for the modal
+    const modalAppointment: Appointment = {
+      ...appointment,
+      user: appointment.user.name,
+    };
     setSelectedAppointment(appointment);
     setIsModalOpen(true);
   };
 
   const handleSaveDetails = (updatedAppointment: Appointment) => {
-    setAppointments(prev => prev.map(apt => apt.id === updatedAppointment.id ? updatedAppointment : apt));
+    setAppointments(prev => prev.map(apt => {
+        if (apt.id === updatedAppointment.id) {
+            // Find the original user object to preserve it
+            const originalApt = prev.find(p => p.id === updatedAppointment.id);
+            return { ...apt, ...updatedAppointment, user: originalApt?.user || { name: updatedAppointment.user, phone: '', address: '' } };
+        }
+        return apt;
+    }));
   };
 
 
@@ -62,8 +74,8 @@ export function AppointmentsTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Details</TableHead>
+                <TableHead>Patient Details</TableHead>
+                <TableHead>Appointment Details</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Date & Time</TableHead>
                 <TableHead>Status</TableHead>
@@ -73,7 +85,15 @@ export function AppointmentsTable() {
             <TableBody>
               {appointments.map(apt => (
                 <TableRow key={apt.id}>
-                  <TableCell>{apt.user}</TableCell>
+                  <TableCell>
+                    <div className="font-semibold">{apt.user.name}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                        <Phone className="h-4 w-4" /> {apt.user.phone}
+                    </div>
+                     <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                        <Home className="h-4 w-4" /> {apt.user.address}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <p className="font-semibold">{apt.item}</p>
                     {apt.clinic && <p className="text-sm text-muted-foreground">{apt.clinic}</p>}
@@ -108,7 +128,7 @@ export function AppointmentsTable() {
         <AppointmentDetailsModal 
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
-            appointment={selectedAppointment}
+            appointment={{...selectedAppointment, user: selectedAppointment.user.name}}
             onSave={handleSaveDetails}
         />
       )}
