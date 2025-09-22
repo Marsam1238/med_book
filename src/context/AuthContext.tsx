@@ -82,31 +82,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const savedUser = localStorage.getItem('healthConnectUser');
     if (savedUser) {
       const parsedUser: User = JSON.parse(savedUser);
-      setUser(parsedUser);
-      // Optional: Re-validate user with Firestore
       const userDocRef = doc(db, 'users', parsedUser.uid);
+      
       getDoc(userDocRef).then((docSnap) => {
         if (docSnap.exists()) {
-          setUser(docSnap.data() as User);
+          setUser({ uid: docSnap.id, ...docSnap.data() } as User);
         } else {
           // User not in DB, clear local storage
           logout();
         }
+        setLoading(false);
       }).catch((error: FirestoreError) => {
-        if (error.code === 'permission-denied') {
-            console.error("Firestore permission denied. Check your security rules.");
-             toast({
+        console.error("Auth check failed:", error);
+         if (error.code === 'permission-denied') {
+            toast({
                 variant: "destructive",
                 title: "Database Access Denied",
-                description: "Could not connect to the database. This is likely due to Firestore security rules. Please ensure they allow read access.",
+                description: "Could not verify user. This is likely due to Firestore security rules.",
                 duration: 10000,
             });
         }
         // Log out if we can't verify the user
         logout();
+        setLoading(false);
       })
+    } else {
+        setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -183,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 duration: 10000,
             });
         } else {
+            // Re-throw other errors so the login page can catch them
             throw error;
         }
     }
