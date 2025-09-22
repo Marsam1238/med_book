@@ -164,14 +164,14 @@ export function BookingModal({
                     </Select>
                   </div>
                 </div>
-              </div>
-              <DialogFooter className="flex flex-col gap-2">
                  {isProfileIncomplete && (
-                    <div className='text-center'>
+                    <div className='text-center mt-4'>
                         <p className='text-sm text-destructive mb-2'>Please complete your profile to book appointments.</p>
                         <Button variant="secondary" onClick={() => router.push('/signup')}>Complete Profile</Button>
                     </div>
                   )}
+              </div>
+              <DialogFooter>
                   <Button onClick={handleBooking} disabled={isConfirming || isProfileIncomplete} className="w-full">
                     {isConfirming ? (
                       <>
