@@ -38,11 +38,15 @@ export default function LoginPage() {
       await login(phone, password);
       // On success, the AuthContext will redirect
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: error.message,
-      });
+      // The AuthContext now shows a detailed toast for permission errors.
+      // We still show a generic toast for other errors like "user not found".
+      if (error.code !== 'permission-denied') {
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: error.message,
+        });
+      }
     } finally {
       setLoading(false);
     }

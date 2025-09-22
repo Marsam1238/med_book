@@ -181,13 +181,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             toast({
                 variant: "destructive",
                 title: "Login Failed: Permission Denied",
-                description: "The app could not access the database. Please check your Firestore security rules in the Firebase Console.",
+                description: "The app could not access the database. Please check your Firestore security rules in the Firebase Console. You may need to allow reads on the 'users' and 'user_passwords' collections.",
                 duration: 10000,
             });
-        } else {
-            // Re-throw other errors so the login page can catch them
-            throw error;
         }
+        // Re-throw other errors so the login page can catch them and stop the loading spinner.
+        throw error;
     }
   };
 
@@ -195,30 +194,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (phone.length !== 10) {
         throw new Error('Phone number must be 10 digits.');
     }
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('phone', '==', phone));
-    const querySnapshot = await getDocs(q);
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('phone', '==', phone));
+      const querySnapshot = await getDocs(q);
 
-    if (!querySnapshot.empty) {
-        throw new Error('An account with this phone number already exists.');
+      if (!querySnapshot.empty) {
+          throw new Error('An account with this phone number already exists.');
+      }
+
+      const newUserRef = doc(collection(db, 'users'));
+      const newUser: User = {
+          uid: newUserRef.id,
+          phone,
+          ...details,
+      };
+
+      await setDoc(newUserRef, newUser);
+      
+      // Store password separately (again, simplified for demo)
+      await setDoc(doc(db, `user_passwords/${newUserRef.id}`), { password });
+
+      setUser(newUser);
+      localStorage.setItem('healthConnectUser', JSON.stringify(newUser));
+      toast({ title: 'Account created successfully!' });
+      router.push('/profile');
+    } catch (error: any) {
+      if (error instanceof FirestoreError && error.code === 'permission-denied') {
+          toast({
+              variant: "destructive",
+              title: "Signup Failed: Permission Denied",
+              description: "The app could not write to the database. Please check your Firestore security rules in the Firebase Console to allow writes on the 'users' and 'user_passwords' collections.",
+              duration: 10000,
+          });
+      }
+      // Re-throw other errors so the signup page can catch them and stop the loading spinner.
+      throw error;
     }
-
-    const newUserRef = doc(collection(db, 'users'));
-    const newUser: User = {
-        uid: newUserRef.id,
-        phone,
-        ...details,
-    };
-
-    await setDoc(newUserRef, newUser);
-    
-    // Store password separately (again, simplified for demo)
-    await setDoc(doc(db, `user_passwords/${newUserRef.id}`), { password });
-
-    setUser(newUser);
-    localStorage.setItem('healthConnectUser', JSON.stringify(newUser));
-    toast({ title: 'Account created successfully!' });
-    router.push('/profile');
   };
 
   const updateUserDetails = async (details: UserDetails) => {
