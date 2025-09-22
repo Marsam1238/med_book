@@ -44,7 +44,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onSave, appointment }
   };
 
   const handleSubmit = () => {
-    const updatedAppointment: Appointment = { ...appointment, ...formData, user: appointment.user };
+    const updatedAppointment: Appointment = { ...appointment, ...formData };
     onSave(updatedAppointment);
     onClose();
     toast({
@@ -59,7 +59,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onSave, appointment }
         <DialogHeader>
           <DialogTitle>Edit Appointment Details</DialogTitle>
           <DialogDescription>
-            Add or update details for the appointment with {appointment.user}.
+            Add or update details for the appointment with {appointment.user.name}.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

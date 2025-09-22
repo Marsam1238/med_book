@@ -14,7 +14,12 @@ interface User {
 
 export interface Appointment {
   id: number;
-  user: string;
+  user: {
+    uid: string;
+    name: string;
+    phone: string;
+    address: string;
+  };
   item: string;
   type: 'Doctor' | 'Lab Test';
   date: string;
@@ -40,6 +45,8 @@ interface AuthContextType {
   logout: () => void;
   addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => void;
   updateUserDetails: (details: UserDetails) => void;
+  allAppointments: Appointment[];
+  updateAppointment: (updatedAppointment: Appointment) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,7 +68,7 @@ const passwordStore: { [key: string]: string } = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -71,20 +78,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
-        loadAppointments(parsedUser.uid);
     }
+    loadAllAppointments();
     setLoading(false);
   }, []);
 
-  const loadAppointments = (userId: string) => {
-    const storedAppointments = localStorage.getItem(`healthConnectAppointments_${userId}`);
+  const loadAllAppointments = () => {
+    const storedAppointments = localStorage.getItem('healthConnectAllAppointments');
     if (storedAppointments) {
-      setAppointments(JSON.parse(storedAppointments));
+      setAllAppointments(JSON.parse(storedAppointments));
     }
   }
 
-  const saveAppointments = (userId: string, newAppointments: Appointment[]) => {
-      localStorage.setItem(`healthConnectAppointments_${userId}`, JSON.stringify(newAppointments));
+  const saveAllAppointments = (newAppointments: Appointment[]) => {
+      setAllAppointments(newAppointments);
+      localStorage.setItem('healthConnectAllAppointments', JSON.stringify(newAppointments));
   }
 
   const login = async (phone: string, password: string) => {
@@ -101,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userEntry && passwordStore[userEntry.uid] === password) {
         setUser(userEntry);
         localStorage.setItem('healthConnectUser', JSON.stringify(userEntry));
-        loadAppointments(userEntry.uid);
+        loadAllAppointments();
         toast({ title: 'Login Successful' });
         router.push('/profile');
     } else {
@@ -151,27 +159,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setUser(null);
-    setAppointments([]);
     localStorage.removeItem('healthConnectUser');
     toast({ title: "You have been logged out successfully." });
     router.push('/login');
   };
 
   const addAppointment = (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => {
-      if(!user) return;
+      if(!user || !user.name || !user.phone || !user.address) return;
       const newAppointment: Appointment = {
           ...appointmentData,
-          id: appointments.length + 1,
-          user: user.name || user.phone || 'Unknown',
+          id: allAppointments.length + 1,
+          user: {
+            uid: user.uid,
+            name: user.name,
+            phone: user.phone,
+            address: user.address,
+          },
           status: 'Pending',
       }
-      const newAppointments = [...appointments, newAppointment];
-      setAppointments(newAppointments);
-      saveAppointments(user.uid, newAppointments);
+      const newAppointments = [...allAppointments, newAppointment];
+      saveAllAppointments(newAppointments);
   }
 
+  const updateAppointment = (updatedAppointment: Appointment) => {
+      const newAppointments = allAppointments.map(apt => apt.id === updatedAppointment.id ? updatedAppointment : apt);
+      saveAllAppointments(newAppointments);
+  };
+  
+  const userAppointments = user ? allAppointments.filter(apt => apt.user.uid === user.uid) : [];
+
+
   return (
-    <AuthContext.Provider value={{ user, loading, appointments, login, signup, logout, addAppointment, updateUserDetails }}>
+    <AuthContext.Provider value={{ user, loading, appointments: userAppointments, login, signup, logout, addAppointment, updateUserDetails, allAppointments, updateAppointment }}>
       {children}
     </AuthContext.Provider>
   );

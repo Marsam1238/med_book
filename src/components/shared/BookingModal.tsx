@@ -183,7 +183,7 @@ export function BookingModal({
                 </DialogFooter>
               )}
               <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
-                  <Bell className="h-4 w-4" /> You'll receive an email reminder 24 hours before your appointment.
+                  <Bell className="h-4 w-4" /> You'll receive a confirmation on your phone.
               </p>
             </>
           )}
