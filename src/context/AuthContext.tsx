@@ -18,6 +18,7 @@ import {
   onSnapshot,
   Timestamp,
   orderBy,
+  FirestoreError,
 } from 'firebase/firestore';
 
 
@@ -91,6 +92,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // User not in DB, clear local storage
           logout();
         }
+      }).catch((error: FirestoreError) => {
+        if (error.code === 'permission-denied') {
+            console.error("Firestore permission denied. Check your security rules.");
+             toast({
+                variant: "destructive",
+                title: "Database Access Denied",
+                description: "Could not connect to the database. This is likely due to Firestore security rules. Please ensure they allow read access.",
+                duration: 10000,
+            });
+        }
+        // Log out if we can't verify the user
+        logout();
       })
     }
     setLoading(false);
@@ -105,6 +118,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         appointmentsData.push({ id: doc.id, ...doc.data() } as Appointment);
       });
       setAllAppointments(appointmentsData);
+    }, (error: FirestoreError) => {
+        if (error.code === 'permission-denied') {
+            console.error("Firestore permission denied on appointments. Check your security rules.");
+             toast({
+                variant: "destructive",
+                title: "Cannot Fetch Appointments",
+                description: "Could not load appointments due to database security rules. Please update them in your Firebase Console.",
+                duration: 10000,
+            });
+        }
     });
 
     return () => unsubscribe(); // Cleanup listener on unmount
@@ -124,33 +147,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (phone.length !== 10) {
       throw new Error('Phone number must be 10 digits.');
     }
+    try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('phone', '==', phone));
+        const querySnapshot = await getDocs(q);
 
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('phone', '==', phone));
-    const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+        throw new Error('No account found with this phone number.');
+        }
 
-    if (querySnapshot.empty) {
-      throw new Error('No account found with this phone number.');
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        
+        // NOTE: In a real app, password would be hashed and checked on a server.
+        // This is a simplified check for the demo.
+        const passwordDocRef = doc(db, `user_passwords/${userDoc.id}`);
+        const passwordSnap = await getDoc(passwordDocRef);
+
+        if (!passwordSnap.exists() || passwordSnap.data().password !== password) {
+        throw new Error('Invalid phone number or password.');
+        }
+
+        const loggedInUser: User = { uid: userDoc.id, ...userData } as User;
+        setUser(loggedInUser);
+        localStorage.setItem('healthConnectUser', JSON.stringify(loggedInUser));
+
+        toast({ title: 'Login Successful' });
+        router.push('/profile');
+    } catch (error: any) {
+        if (error instanceof FirestoreError && error.code === 'permission-denied') {
+            toast({
+                variant: "destructive",
+                title: "Login Failed: Permission Denied",
+                description: "The app could not access the database. Please check your Firestore security rules in the Firebase Console.",
+                duration: 10000,
+            });
+        } else {
+            throw error;
+        }
     }
-
-    const userDoc = querySnapshot.docs[0];
-    const userData = userDoc.data();
-    
-    // NOTE: In a real app, password would be hashed and checked on a server.
-    // This is a simplified check for the demo.
-    const passwordDocRef = doc(db, `user_passwords/${userDoc.id}`);
-    const passwordSnap = await getDoc(passwordDocRef);
-
-    if (!passwordSnap.exists() || passwordSnap.data().password !== password) {
-      throw new Error('Invalid phone number or password.');
-    }
-
-    const loggedInUser: User = { uid: userDoc.id, ...userData } as User;
-    setUser(loggedInUser);
-    localStorage.setItem('healthConnectUser', JSON.stringify(loggedInUser));
-
-    toast({ title: 'Login Successful' });
-    router.push('/profile');
   };
 
   const signup = async (phone: string, password: string, details: UserDetails) => {

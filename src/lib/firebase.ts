@@ -23,16 +23,17 @@ if (!getApps().length) {
 const db = getFirestore(app);
 
 // Enable offline persistence
-enableIndexedDbPersistence(db)
-  .catch((err) => {
-    if (err.code == 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one.
-      // Silently fail.
-    } else if (err.code == 'unimplemented') {
-      // The current browser does not support all of the
-      // features required to enable persistence
-    }
-  });
+try {
+  enableIndexedDbPersistence(db);
+} catch (err: any) {
+  if (err.code == 'failed-precondition') {
+    // Multiple tabs open, persistence can only be enabled in one.
+    // Silently fail.
+  } else if (err.code == 'unimplemented') {
+    // The current browser does not support all of the
+    // features required to enable persistence
+  }
+}
 
 
 export { db };
