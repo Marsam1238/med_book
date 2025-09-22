@@ -3,91 +3,91 @@
     {
       "id": "doctor-1",
       "description": "Portrait of Dr. Emily Carter",
-      "imageUrl": "https://picsum.photos/seed/doc1/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "woman doctor"
     },
     {
       "id": "doctor-2",
       "description": "Portrait of Dr. Ben Adams",
-      "imageUrl": "https://picsum.photos/seed/doc2/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "man doctor"
     },
     {
       "id": "doctor-3",
       "description": "Portrait of Dr. Sarah Jenkins",
-      "imageUrl": "https://picsum.photos/seed/doc3/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "female doctor"
     },
     {
       "id": "doctor-4",
       "description": "Portrait of a female doctor smiling",
-      "imageUrl": "https://picsum.photos/seed/doc4/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1582750421629-6366cb46a589?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "woman doctor"
     },
     {
       "id": "doctor-5",
       "description": "Portrait of a male doctor in a lab coat",
-      "imageUrl": "https://picsum.photos/seed/doc5/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1612349317150-e413f6a5b16e?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "male doctor"
     },
     {
       "id": "doctor-6",
       "description": "Portrait of a caring female doctor",
-      "imageUrl": "https://picsum.photos/seed/doc6/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1594824476967-48c8b964273f?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "doctor smiling"
     },
     {
       "id": "doctor-7",
       "description": "Portrait of a senior male doctor",
-      "imageUrl": "https://picsum.photos/seed/doc7/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1551191968-96102ee73c4a?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "senior doctor"
     },
     {
       "id": "doctor-8",
       "description": "Portrait of a friendly dentist",
-      "imageUrl": "https://picsum.photos/seed/doc8/400/400",
+      "imageUrl": "https://images.unsplash.com/photo-1619451998592-7a463b2c2b3a?q=80&w=400&h=400&auto=format&fit=crop",
       "imageHint": "dentist portrait"
     },
     {
       "id": "lab-test-1",
       "description": "Image of a blood test tube",
-      "imageUrl": "https://picsum.photos/seed/lab1/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1631562002222-142c6d489808?q=80&w=600&h=400&auto=format&fit=crop",
       "imageHint": "blood test"
     },
     {
       "id": "lab-test-2",
       "description": "Image of a urine sample container",
-      "imageUrl": "https://picsum.photos/seed/lab2/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1579165466949-5e102353bf3c?q=80&w=600&h=400&auto=format&fit=crop",
       "imageHint": "lab equipment"
     },
     {
       "id": "lab-test-3",
       "description": "Image of an MRI machine",
-      "imageUrl": "https://picsum.photos/seed/lab3/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1530497610242-d225e2293126?q=80&w=600&h=400&auto=format&fit=crop",
       "imageHint": "mri scan"
     },
     {
       "id": "lab-test-4",
       "description": "Image of an ECG graph",
-      "imageUrl": "https://picsum.photos/seed/lab4/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1545231027-65d8869f7831?q=80&w=600&h=400&auto=format&fit=crop",
       "imageHint": "heart monitor"
     },
     {
       "id": "lab-test-5",
       "description": "Image of a COVID-19 test kit",
-      "imageUrl": "https://picsum.photos/seed/lab5/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1604018318151-e4a5c5313988?q=80&w=600&h=400&auto=format&fit=crop",
       "imageHint": "medical test"
     },
     {
       "id": "lab-test-6",
       "description": "Image representing hormone testing",
-      "imageUrl": "https://picsum.photos/seed/lab6/600/400",
+      "imageUrl": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=600&h=400&auto=format&fit=crop",
       "imageHint": "science lab"
     },
     {
       "id": "hero-image",
       "description": "A friendly doctor consulting with a patient",
-      "imageUrl": "https://picsum.photos/seed/hero/1200/800",
+      "imageUrl": "https://images.unsplash.com/photo-1576091160550-2173dba9996a?q=80&w=1200&h=800&auto=format&fit=crop",
       "imageHint": "doctor patient"
     }
   ]
