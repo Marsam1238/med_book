@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface User {
   uid: string;
-  email: string | null;
+  phone: string | null;
   name?: string;
   address?: string;
 }
@@ -31,8 +31,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   appointments: Appointment[];
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, details: UserDetails) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
+  signup: (phone: string, password: string, details: UserDetails) => Promise<void>;
   logout: () => void;
   addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status'>) => void;
   updateUserDetails: (details: UserDetails) => void;
@@ -44,7 +44,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const userStore: { [key: string]: User } = {
     'user-123': {
         uid: 'user-123',
-        email: 'user@healthconnect.com',
+        phone: '1234567890',
         name: 'Demo User',
         address: '123 Health St, Wellness City'
     }
@@ -83,8 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(`healthConnectAppointments_${userId}`, JSON.stringify(newAppointments));
   }
 
-  const login = async (email: string, password: string) => {
-    const userEntry = Object.values(userStore).find(u => u.email === email);
+  const login = async (phone: string, password: string) => {
+    const userEntry = Object.values(userStore).find(u => u.phone === phone);
     
     if (userEntry && passwordStore[userEntry.uid] === password) {
         setUser(userEntry);
@@ -93,19 +93,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Login Successful' });
         router.push('/profile');
     } else {
-        throw new Error('Invalid email or password.');
+        throw new Error('Invalid phone number or password.');
     }
   }
 
-  const signup = async (email: string, password: string, details: UserDetails) => {
-      if (Object.values(userStore).some(u => u.email === email)) {
-          throw new Error('An account with this email already exists.');
+  const signup = async (phone: string, password: string, details: UserDetails) => {
+      if (Object.values(userStore).some(u => u.phone === phone)) {
+          throw new Error('An account with this phone number already exists.');
       }
 
       const newUid = `user-${Date.now()}`;
       const newUser: User = {
           uid: newUid,
-          email,
+          phone,
           ...details,
       };
 
@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newAppointment: Appointment = {
           ...appointmentData,
           id: appointments.length + 1,
-          user: user.name || user.email || 'Unknown',
+          user: user.name || user.phone || 'Unknown',
           status: 'Pending',
       }
       const newAppointments = [...appointments, newAppointment];

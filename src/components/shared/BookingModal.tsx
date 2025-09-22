@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Loader2, LogIn, Mail } from 'lucide-react';
+import { Bell, Loader2, LogIn } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -128,12 +128,12 @@ export function BookingModal({
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
+                  <Label htmlFor="phone" className="text-right">
+                    Phone
                   </Label>
                   <Input
-                    id="email"
-                    value={user.email || ''}
+                    id="phone"
+                    value={user.phone || ''}
                     className="col-span-3"
                     disabled
                   />

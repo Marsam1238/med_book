@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -30,7 +30,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (!email || !password || !name || !address) {
+    if (!phone || !password || !name || !address) {
         toast({
             variant: 'destructive',
             title: 'Missing Fields',
@@ -40,7 +40,7 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-        await signup(email, password, { name, address });
+        await signup(phone, password, { name, address });
         // Redirect is handled in AuthContext
     } catch (error: any) {
         toast({
@@ -77,14 +77,14 @@ export default function SignupPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
+                id="phone"
+                type="tel"
+                placeholder="123-456-7890"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
              <div className="grid gap-2">

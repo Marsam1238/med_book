@@ -18,7 +18,7 @@ import { LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('user@healthconnect.com');
+  const [phone, setPhone] = useState('1234567890');
   const [password, setPassword] = useState('password');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -27,7 +27,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setLoading(true);
     try {
-      await login(email, password);
+      await login(phone, password);
       // On success, the AuthContext will redirect
     } catch (error: any) {
       toast({
@@ -48,21 +48,21 @@ export default function LoginPage() {
             <LogIn className="h-6 w-6" /> Login
           </CardTitle>
           <CardDescription>
-            Enter your email below to login to your account. <br/>
-            Use <strong>user@healthconnect.com</strong> and <strong>password</strong> for demo.
+            Enter your phone number below to login to your account. <br/>
+            Use <strong>1234567890</strong> and <strong>password</strong> for demo.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
+                id="phone"
+                type="tel"
+                placeholder="123-456-7890"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
