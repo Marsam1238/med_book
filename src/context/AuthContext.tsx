@@ -61,10 +61,10 @@ interface AuthContextType {
   login: (phone: string, password: string) => Promise<void>;
   signup: (phone: string, password: string, details: UserDetails) => Promise<void>;
   logout: () => void;
-  addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status' | 'createdAt'>) => void;
-  updateUserDetails: (details: UserDetails) => void;
+  addAppointment: (appointmentData: Omit<Appointment, 'id' | 'user' | 'status' | 'createdAt'>) => Promise<void>;
+  updateUserDetails: (details: UserDetails) => Promise<void>;
   allAppointments: Appointment[];
-  updateAppointment: (updatedAppointment: Partial<Appointment> & { id: string }) => void;
+  updateAppointment: (updatedAppointment: Partial<Appointment> & { id: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,8 +77,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { toast } = useToast();
 
+  const handleFirestoreError = (error: any, operation: string) => {
+    console.error(`Firestore error during ${operation}:`, error);
+    if (error instanceof FirestoreError && error.code === 'permission-denied') {
+      toast({
+        variant: "destructive",
+        title: `Database Permission Denied during ${operation}`,
+        description: "Please check your Firestore security rules in the Firebase Console. You may need to allow read/write access.",
+        duration: 10000,
+      });
+    } else {
+        toast({
+            variant: "destructive",
+            title: `An error occurred during ${operation}`,
+            description: error.message,
+        })
+    }
+  };
+
+
   useEffect(() => {
-    // Check for persisted user
     const savedUser = localStorage.getItem('healthConnectUser');
     if (savedUser) {
       const parsedUser: User = JSON.parse(savedUser);
@@ -88,31 +106,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (docSnap.exists()) {
           setUser({ uid: docSnap.id, ...docSnap.data() } as User);
         } else {
-          // User not in DB, clear local storage
           logout();
         }
-        setLoading(false);
-      }).catch((error: FirestoreError) => {
-        console.error("Auth check failed:", error);
-         if (error.code === 'permission-denied') {
-            toast({
-                variant: "destructive",
-                title: "Database Access Denied",
-                description: "Could not verify user. This is likely due to Firestore security rules.",
-                duration: 10000,
-            });
-        }
-        // Log out if we can't verify the user
-        logout();
-        setLoading(false);
-      })
+      }).catch((error) => handleFirestoreError(error, 'user verification'))
+      .finally(() => setLoading(false));
     } else {
         setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Listen for all appointments in real-time
     const q = query(collection(db, 'appointments'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const appointmentsData: Appointment[] = [];
@@ -120,19 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         appointmentsData.push({ id: doc.id, ...doc.data() } as Appointment);
       });
       setAllAppointments(appointmentsData);
-    }, (error: FirestoreError) => {
-        if (error.code === 'permission-denied') {
-            console.error("Firestore permission denied on appointments. Check your security rules.");
-             toast({
-                variant: "destructive",
-                title: "Cannot Fetch Appointments",
-                description: "Could not load appointments due to database security rules. Please update them in your Firebase Console.",
-                duration: 10000,
-            });
-        }
-    });
+    }, (error) => handleFirestoreError(error, 'fetching appointments'));
 
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -146,54 +139,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
 
   const login = async (phone: string, password: string) => {
-    if (phone.length !== 10) {
-      throw new Error('Phone number must be 10 digits.');
-    }
     try {
         const usersRef = collection(db, 'users');
         const q = query(usersRef, where('phone', '==', phone));
         const querySnapshot = await getDocs(q);
 
-        if (querySnapshot.empty) {
-        throw new Error('No account found with this phone number.');
-        }
+        if (querySnapshot.empty) throw new Error('No account found with this phone number.');
 
         const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-        
-        // NOTE: In a real app, password would be hashed and checked on a server.
-        // This is a simplified check for the demo.
         const passwordDocRef = doc(db, `user_passwords/${userDoc.id}`);
         const passwordSnap = await getDoc(passwordDocRef);
 
         if (!passwordSnap.exists() || passwordSnap.data().password !== password) {
-        throw new Error('Invalid phone number or password.');
+            throw new Error('Invalid phone number or password.');
         }
 
-        const loggedInUser: User = { uid: userDoc.id, ...userData } as User;
+        const loggedInUser: User = { uid: userDoc.id, ...userDoc.data() } as User;
         setUser(loggedInUser);
         localStorage.setItem('healthConnectUser', JSON.stringify(loggedInUser));
 
         toast({ title: 'Login Successful' });
         router.push('/profile');
     } catch (error: any) {
-        if (error instanceof FirestoreError && error.code === 'permission-denied') {
-            toast({
-                variant: "destructive",
-                title: "Login Failed: Permission Denied",
-                description: "The app could not access the database. Please check your Firestore security rules in the Firebase Console. You may need to allow reads on the 'users' and 'user_passwords' collections.",
-                duration: 10000,
-            });
-        }
-        // Re-throw other errors so the login page can catch them and stop the loading spinner.
-        throw error;
+        handleFirestoreError(error, 'login');
+        throw error; // Re-throw to allow component to stop loading state
     }
   };
 
   const signup = async (phone: string, password: string, details: UserDetails) => {
-    if (phone.length !== 10) {
-        throw new Error('Phone number must be 10 digits.');
-    }
     try {
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('phone', '==', phone));
@@ -204,15 +177,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const newUserRef = doc(collection(db, 'users'));
-      const newUser: User = {
-          uid: newUserRef.id,
-          phone,
-          ...details,
-      };
+      const newUser: User = { uid: newUserRef.id, phone, ...details };
 
-      await setDoc(newUserRef, newUser);
-      
-      // Store password separately (again, simplified for demo)
+      await setDoc(newUserRef, { phone, name: details.name, address: details.address });
       await setDoc(doc(db, `user_passwords/${newUserRef.id}`), { password });
 
       setUser(newUser);
@@ -220,28 +187,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: 'Account created successfully!' });
       router.push('/profile');
     } catch (error: any) {
-      if (error instanceof FirestoreError && error.code === 'permission-denied') {
-          toast({
-              variant: "destructive",
-              title: "Signup Failed: Permission Denied",
-              description: "The app could not write to the database. Please check your Firestore security rules in the Firebase Console to allow writes on the 'users' and 'user_passwords' collections.",
-              duration: 10000,
-          });
-      }
-      // Re-throw other errors so the signup page can catch them and stop the loading spinner.
-      throw error;
+      handleFirestoreError(error, 'signup');
+      throw error; // Re-throw to allow component to stop loading state
     }
   };
 
   const updateUserDetails = async (details: UserDetails) => {
     if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        await updateDoc(userDocRef, details);
-        const updatedUser = { ...user, ...details };
-        setUser(updatedUser);
-        localStorage.setItem('healthConnectUser', JSON.stringify(updatedUser));
-        toast({ title: 'Profile updated!'});
-        router.push('/profile');
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, details);
+            const updatedUser = { ...user, ...details };
+            setUser(updatedUser);
+            localStorage.setItem('healthConnectUser', JSON.stringify(updatedUser));
+            toast({ title: 'Profile updated!'});
+            router.push('/profile');
+        } catch(error) {
+            handleFirestoreError(error, 'profile update');
+        }
     }
   };
 
@@ -273,13 +236,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         status: 'Pending' as 'Pending' | 'Confirmed',
         createdAt: Timestamp.now(),
     };
-    await addDoc(collection(db, 'appointments'), newAppointment);
+    try {
+        await addDoc(collection(db, 'appointments'), newAppointment);
+    } catch(error) {
+        handleFirestoreError(error, 'booking appointment');
+    }
   };
 
   const updateAppointment = async (updatedAppointment: Partial<Appointment> & { id: string }) => {
     const { id, ...dataToUpdate } = updatedAppointment;
     const appointmentDocRef = doc(db, 'appointments', id);
-    await updateDoc(appointmentDocRef, dataToUpdate);
+    try {
+        await updateDoc(appointmentDocRef, dataToUpdate);
+    } catch (error) {
+        handleFirestoreError(error, 'updating appointment');
+    }
   };
 
   return (

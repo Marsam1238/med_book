@@ -35,7 +35,8 @@ try {
         }
     });
 } catch (err: any) {
-    // Silently fail 
+    // Silently fail if persistence cannot be enabled
+    console.warn("Could not enable Firestore offline persistence:", err);
 }
 
 
