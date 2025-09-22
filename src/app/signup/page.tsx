@@ -38,6 +38,14 @@ export default function SignupPage() {
         });
         return;
     }
+     if (phone.length !== 10) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Phone Number',
+        description: 'Phone number must be 10 digits.',
+      });
+      return;
+    }
     setLoading(true);
     try {
         await signup(phone, password, { name, address });
@@ -77,14 +85,15 @@ export default function SignupPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Phone Number (10 digits)</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="123-456-7890"
+                placeholder="1234567890"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                maxLength={10}
               />
             </div>
              <div className="grid gap-2">

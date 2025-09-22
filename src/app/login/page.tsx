@@ -25,6 +25,14 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const handleLogin = async () => {
+    if (phone.length !== 10) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Phone Number',
+        description: 'Phone number must be 10 digits.',
+      });
+      return;
+    }
     setLoading(true);
     try {
       await login(phone, password);
@@ -59,10 +67,11 @@ export default function LoginPage() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="123-456-7890"
+                placeholder="1234567890"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                maxLength={10}
               />
             </div>
             <div className="grid gap-2">
