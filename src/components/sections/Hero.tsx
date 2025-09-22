@@ -4,6 +4,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchTabs } from '@/components/shared/SearchTabs';
+import { Phone } from 'lucide-react';
 
 export default function Hero() {
   return (
@@ -15,6 +16,11 @@ export default function Hero() {
         <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl font-body">
           Instantly find doctors, book lab tests, and manage your health with ease.
         </p>
+
+        <div className="mt-6 flex justify-center items-center gap-2 text-lg">
+            <Phone className="h-5 w-5" />
+            <p className="font-body">For booking doctor and lab test call - <strong>9091104010</strong></p>
+        </div>
 
         <Card className="mt-10 max-w-2xl mx-auto shadow-2xl">
           <CardContent className="p-4 md:p-6">
