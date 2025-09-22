@@ -165,9 +165,9 @@ export function BookingModal({
                   </div>
                 </div>
                  {isProfileIncomplete && (
-                    <div className='text-center mt-4'>
-                        <p className='text-sm text-destructive mb-2'>Please complete your profile to book appointments.</p>
-                        <Button variant="secondary" onClick={() => router.push('/signup')}>Complete Profile</Button>
+                    <div className='text-center mt-4 p-3 bg-yellow-100/50 border border-yellow-200 rounded-md'>
+                        <p className='text-sm text-yellow-800 font-medium mb-2'>Please complete your profile to book appointments.</p>
+                        <Button variant="secondary" size="sm" onClick={() => router.push('/signup')}>Complete Profile</Button>
                     </div>
                   )}
               </div>
