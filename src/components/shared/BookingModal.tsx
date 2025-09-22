@@ -111,13 +111,13 @@ export function BookingModal({
             </>
           ) : (
             <>
-              <div className="md:flex-grow md:overflow-y-auto pr-6 -mr-6">
-                <DialogHeader>
-                  <DialogTitle className="font-headline">{title}</DialogTitle>
-                  <DialogDescription>
-                    Confirm your details and select a date and time.
-                  </DialogDescription>
-                </DialogHeader>
+              <DialogHeader>
+                <DialogTitle className="font-headline">{title}</DialogTitle>
+                <DialogDescription>
+                  Confirm your details and select a date and time.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-grow overflow-y-auto pr-6 -mr-6">
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="name" className="text-right">
@@ -174,7 +174,7 @@ export function BookingModal({
                 </div>
               </div>
 
-              <DialogFooter className="md:flex-shrink-0">
+              <DialogFooter className="mt-4 pt-4 border-t">
                   <Button onClick={handleBooking} disabled={isConfirming || isProfileIncomplete} className="w-full">
                     {isConfirming ? (
                       <>
@@ -186,7 +186,7 @@ export function BookingModal({
                     )}
                   </Button>
               </DialogFooter>
-              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2 md:flex-shrink-0">
+              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2 pt-2">
                   <Bell className="h-4 w-4" /> You'll receive a confirmation on your phone.
               </p>
             </>
